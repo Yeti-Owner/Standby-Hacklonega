@@ -48,10 +48,10 @@ export default function Home() {
 
       <div className="relative z-10">
         {/* Floating Header Navigation */}
-        <header className="sticky top-0 z-50 px-4 sm:px-8 py-3.5 backdrop-blur-md bg-white/70 border-b border-sky-100/80 transition-all duration-300">
+        <header className="sticky top-0 z-50 px-4 sm:px-8 py-2.5 backdrop-blur-md bg-white/75 border-b border-sky-100/80 transition-all duration-300">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="relative h-11 w-40 sm:w-48 flex items-center">
+            <div className="relative h-14 sm:h-16 w-48 sm:w-60 flex items-center">
               <Image
                 src="/images/standby-new-logo.png"
                 alt="Standby"
@@ -88,15 +88,15 @@ export default function Home() {
       {/* ========================================================================= */}
       {/* PART 1: LANDING PAGE HERO                                                */}
       {/* ========================================================================= */}
-      <section className="relative min-h-[85vh] flex flex-col items-center justify-center px-4 sm:px-6 pt-4 pb-16 text-center z-10">
-        <div className="max-w-4xl mx-auto flex flex-col items-center w-full">
+      <section className="relative min-h-[85vh] flex flex-col items-center justify-center px-4 sm:px-6 pt-2 pb-16 text-center z-10">
+        <div className="max-w-5xl mx-auto flex flex-col items-center w-full">
           {/* Prominently Sized Standby Logo Centered Beautifully Above Search Bar */}
-          <div className="relative w-80 sm:w-[440px] md:w-[560px] lg:w-[640px] h-36 sm:h-48 md:h-60 mb-6 flex items-center justify-center animate-float-gentle">
+          <div className="relative w-full max-w-[340px] sm:max-w-[540px] md:max-w-[700px] lg:max-w-[840px] xl:max-w-[940px] h-48 sm:h-64 md:h-80 lg:h-96 mb-6 sm:mb-8 flex items-center justify-center animate-float-gentle">
             <Image
               src="/images/standby-new-logo.png"
               alt="Standby"
               fill
-              className="object-contain drop-shadow-sm select-none"
+              className="object-contain drop-shadow-md select-none"
               priority
             />
           </div>
