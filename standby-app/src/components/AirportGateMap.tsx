@@ -5,6 +5,7 @@ import Map, { Layer, Marker, Source, type LayerProps, type MapProps } from "@vis
 import "maplibre-gl/dist/maplibre-gl.css";
 import { AIRPORT_MAP_STYLE, airportTerminalCoordinates } from "@/lib/airport-map";
 import { loadAirportGates, type AirportGates } from "@/lib/airport-gates";
+import { locateAirportTerminal } from "@/lib/airport-terminals";
 
 const gateDots: LayerProps = {
   id: "airport-gate-doors",
@@ -28,26 +29,29 @@ const gateLabels: LayerProps = {
 export type AirportGateMapProps = {
   airportCode: string;
   gate: string;
+  terminal?: string | null;
   // Keep vector styling and the native MapLibre map accessible for future
   // custom layers, building extrusions, or GLSL rendering via event.target.
   mapStyle?: MapProps["mapStyle"];
   onLoad?: MapProps["onLoad"];
 };
 
-export default function AirportGateMap({ airportCode, gate, mapStyle = AIRPORT_MAP_STYLE, onLoad }: AirportGateMapProps) {
+export default function AirportGateMap({ airportCode, gate, terminal, mapStyle = AIRPORT_MAP_STYLE, onLoad }: AirportGateMapProps) {
   const code = airportCode.trim().toUpperCase();
   const label = gate.trim().toUpperCase();
+  const terminalLabel = terminal?.trim() || "";
   const coordinates = airportTerminalCoordinates(code);
 
   if (!coordinates) return <p className="text-sm text-slate-600">Terminal map unavailable for {code || "this airport"}.{label && ` Gate ${label}.`}</p>;
 
   // Reset immediately on flight changes; never show a previous flight's gate.
-  return <TerminalMap key={`${code}_${label}`} {...{ code, label, coordinates, mapStyle, onLoad }} />;
+  return <TerminalMap key={`${code}_${label}_${terminalLabel}`} {...{ code, label, terminalLabel, coordinates, mapStyle, onLoad }} />;
 }
 
-function TerminalMap({ code, label, coordinates, mapStyle, onLoad }: {
+function TerminalMap({ code, label, terminalLabel, coordinates, mapStyle, onLoad }: {
   code: string;
   label: string;
+  terminalLabel: string;
   coordinates: readonly [number, number];
   mapStyle: MapProps["mapStyle"];
   onLoad: MapProps["onLoad"];
@@ -55,6 +59,17 @@ function TerminalMap({ code, label, coordinates, mapStyle, onLoad }: {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [gates, setGates] = useState<AirportGates | null>(null);
   const [lookupFailed, setLookupFailed] = useState(false);
+  const [terminalCenter, setTerminalCenter] = useState<{ longitude: number; latitude: number } | null>(null);
+  const [terminalStatus, setTerminalStatus] = useState<"loading" | "found" | "unavailable">("loading");
+
+  useEffect(() => {
+    if (label || !terminalLabel) return;
+    let active = true;
+    void locateAirportTerminal(code, terminalLabel, coordinates).then(center => {
+      if (active) { setTerminalCenter(center ?? null); setTerminalStatus(center ? "found" : "unavailable"); }
+    }).catch(() => { if (active) setTerminalStatus("unavailable"); });
+    return () => { active = false; };
+  }, [code, label, terminalLabel, coordinates]);
 
   useEffect(() => {
     let active = true;
@@ -81,14 +96,19 @@ function TerminalMap({ code, label, coordinates, mapStyle, onLoad }: {
     </div>;
   }
 
-  const [longitude, latitude] = selected?.geometry.coordinates ?? coordinates;
+  const [longitude, latitude] = selected?.geometry.coordinates ?? (terminalCenter ? [terminalCenter.longitude, terminalCenter.latitude] : coordinates);
+  const overview = terminalCenter
+    ? `${code} · Terminal ${terminalLabel} area · Approximate terminal center; gate not assigned.`
+    : terminalLabel
+      ? `${code} airport overview · ${terminalStatus === "loading" ? `Locating terminal ${terminalLabel}…` : `Terminal ${terminalLabel} could not be located on the map.`}`
+      : `${code} terminal overview · No gate selected; enter a gate above to zoom in.`;
 
   return <figure className="space-y-2">
     <div
       className="relative h-80 overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
       style={{ filter: "grayscale(100%) contrast(115%)" }}
       role="group"
-      aria-label={selected ? `${code} terminal map centered on mapped gate ${label}, with neighboring gate labels.` : `${code} airport terminal overview. No gate selected.`}
+      aria-label={selected ? `${code} terminal map centered on mapped gate ${label}, with neighboring gate labels.` : overview}
       aria-busy={status === "loading"}
     >
       <Map
@@ -96,7 +116,7 @@ function TerminalMap({ code, label, coordinates, mapStyle, onLoad }: {
         workerUrl={new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).toString()}
         longitude={longitude}
         latitude={latitude}
-        zoom={selected ? 18 : 16}
+        zoom={selected ? 18 : terminalCenter ? 17 : 16}
         bearing={0}
         pitch={0}
         interactive={false}
@@ -122,6 +142,6 @@ function TerminalMap({ code, label, coordinates, mapStyle, onLoad }: {
         {status === "loading" ? "Loading terminal map…" : `Map unavailable. ${code}${label ? ` · Gate ${label}` : ""}. Check the airport signs for directions.`}
       </p>}
     </div>
-    <figcaption className="text-xs text-slate-600">{selected ? `${code} · Gate ${label} · OpenStreetMap gate location.` : `${code} terminal overview · No gate selected; enter a gate above to zoom in.`} {!label && (!gates ? (lookupFailed ? "Gate labels are currently unavailable. " : "Loading gate labels… ") : "")}Terminal outlines and indoor detail depend on map coverage. Confirm your gate with the airline.</figcaption>
+    <figcaption className="text-xs text-slate-600">{selected ? `${code} · Gate ${label} · OpenStreetMap gate location.` : overview} {!label && (!gates ? (lookupFailed ? "Gate labels are currently unavailable. " : "Loading gate labels… ") : "")}Terminal outlines and indoor detail depend on map coverage. Confirm your gate with the airline.</figcaption>
   </figure>;
 }

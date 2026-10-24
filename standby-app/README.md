@@ -45,6 +45,13 @@ gate labels and no active pin. Enter a gate from the airline app or boarding
 pass and choose **Show gate** to center its mapped location at zoom 18. This
 manual selection does not claim the flight is assigned to that gate. Clear
 the field and choose **Show airport** to return to the overview.
+When a terminal is available but the gate is unknown, its mapped center is shown
+at zoom 17 and labeled as an approximate terminal area. Both provider adapters
+preserve terminal fields when supplied. You can also enter a published terminal
+manually and choose **Show terminal**. Terminal centers come from a separately
+cached Overpass `aeroway=terminal` lookup (`airport_terminals_CODE`), so existing
+gate caches do not need clearing or refetching. Missing/ambiguous terminal names
+retain the airport overview. Exact gate locations take priority over terminals.
 The Debug demo includes synthetic JFK/LHR gates
 for testing without flight-provider calls. Synthetic gates may be unmapped;
 gate data loads from Overpass once per airport, and map assets use OpenFreeMap.
