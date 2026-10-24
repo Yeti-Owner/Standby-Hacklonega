@@ -180,31 +180,7 @@ export default function AirportSearch({
         </div>
       )}
 
-      {/* Quick Picks chips */}
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-700">
-        <span className="font-semibold text-slate-800 flex items-center gap-1">
-          <Plane className="w-3.5 h-3.5 text-sky-600 inline" />
-          Popular Airspaces:
-        </span>
-        {quickPicks.map((code) => {
-          const apt = AIRPORTS.find((a) => a.iata === code);
-          if (!apt) return null;
-          const isSelected = selectedAirport?.iata === code;
-          return (
-            <button
-              key={code}
-              onClick={() => handleSelect(apt)}
-              className={`px-3 py-1 rounded-full border transition-all text-xs font-medium cursor-pointer ${
-                isSelected
-                  ? "bg-sky-600 text-white border-sky-600 shadow-sm"
-                  : "bg-white/80 hover:bg-white text-slate-700 hover:text-sky-700 border-sky-200/80 shadow-xs"
-              }`}
-            >
-              <span className="font-bold">{code}</span> · {apt.city}
-            </button>
-          );
-        })}
-      </div>
+      {/* Autocomplete Dropdown */}
     </div>
   );
 }
