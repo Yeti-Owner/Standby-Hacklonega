@@ -36,12 +36,22 @@
   --radius: 1rem;
 }
 
-html, body, input, button, select, textarea {
+html {
   font-family: 'Instrument Serif', Georgia, serif;
   scroll-behavior: smooth;
   color: #0f172a;
   background-color: transparent;
-  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Instrument Serif', Georgia, serif;
+  color: #0f172a;
+  background-color: transparent;
+  overflow-x: clip;
+}
+
+input, button, select, textarea {
+  font-family: 'Instrument Serif', Georgia, serif;
 }
 
 /* Custom scrollbar */

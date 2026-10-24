@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Cloudscape from "@/components/ui/cloudscape";
 import { GlobeCdn, CdnMarker, CdnArc } from "@/components/ui/cobe-globe-cdn";
 import AirportSearch from "@/components/airport-search";
 import FlightInputs from "@/components/flight-inputs";
 import TeamSection from "@/components/team-section";
-import { ScrollFlyIn } from "@/components/ui/hero-section-3";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { PuffyCloudDividerTop, PuffyCloudDividerBottom } from "@/components/puffy-cloud-divider";
 import { Airport, AIRPORTS } from "@/lib/airports";
 import { ChevronDown } from "lucide-react";
@@ -29,6 +29,72 @@ export default function Home() {
 
   const commandSectionRef = useRef<HTMLElement>(null);
   const creatorsSectionRef = useRef<HTMLDivElement>(null);
+  const heroScrollRef = useRef<HTMLDivElement>(null);
+
+  const [windowWidth, setWindowWidth] = useState(1920);
+
+  useEffect(() => {
+    setWindowWidth(window.innerWidth);
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Direct scroll tracking for Pinned Page 1 and Airplane Flyover
+  const { scrollY } = useScroll();
+
+  // Airplane flight path across Page 1:
+  // Starts offscreen left, sweeps horizontally across Page 1, exits offscreen right
+  const planeX = useTransform(
+    scrollY,
+    [0, 40, 520, 650],
+    [-1.35 * windowWidth, -1.35 * windowWidth, 1.35 * windowWidth, 1.35 * windowWidth]
+  );
+  const planeY = useTransform(
+    scrollY,
+    [0, 60, 280, 520, 650],
+    [30, 30, 0, -20, -20]
+  );
+  const planeRotate = useTransform(
+    scrollY,
+    [0, 60, 280, 520, 650],
+    [-2, -2, 0, 1.8, 1.8]
+  );
+  const planeOpacity = useTransform(
+    scrollY,
+    [0, 20, 60, 480, 540, 650],
+    [0, 0, 1, 1, 0, 0]
+  );
+
+  // Page 1 stays 100% pinned in place (0 to 260px) while the plane flies across,
+  // then fades out and dissolves super smoothly as the plane exits (260px to 460px)
+  const heroOpacity = useTransform(
+    scrollY,
+    [0, 260, 460, 650],
+    [1, 1, 0, 0]
+  );
+  const heroScale = useTransform(
+    scrollY,
+    [0, 260, 460, 650],
+    [1, 1, 0.95, 0.95]
+  );
+  const heroY = useTransform(
+    scrollY,
+    [0, 260, 460, 650],
+    [0, 0, -30, -30]
+  );
+
+  // Page 2 (Command Center) smoothly fades in and rises up seamlessly (360px to 560px)
+  const commandOpacity = useTransform(
+    scrollY,
+    [0, 360, 560, 650],
+    [0, 0, 1, 1]
+  );
+  const commandY = useTransform(
+    scrollY,
+    [0, 360, 560, 650],
+    [30, 30, 0, 0]
+  );
 
   // Automatically smooth scroll down to Part 2 on airport search selection
   const handleSelectAirport = (airport: Airport) => {
@@ -168,7 +234,7 @@ export default function Home() {
 
       <div className="relative z-10">
         {/* Floating Header Navigation */}
-        <header className="sticky top-0 z-50 px-4 sm:px-8 py-2.5 backdrop-blur-md bg-white/75 border-b border-sky-100/80 transition-all duration-300">
+        <header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-8 py-2.5 backdrop-blur-md bg-white/75 border-b border-sky-100/80 transition-all duration-300">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <div className="relative h-14 sm:h-16 w-48 sm:w-60 flex items-center">
@@ -200,67 +266,89 @@ export default function Home() {
       </header>
 
       {/* ========================================================================= */}
-      {/* PART 1: LANDING PAGE HERO (LARGE LOGO & SEARCH BAR ONLY)                 */}
+      {/* PART 1: LANDING PAGE HERO (PINNED WITH PLANE FLYING OVER PAGE 1)          */}
       {/* ========================================================================= */}
-      <section className="relative z-20 flex flex-col items-center justify-center min-h-[calc(100vh-76px)] px-4 sm:px-6 lg:px-8 -mt-2 sm:-mt-4">
-        <div className="w-full max-w-4xl mx-auto flex flex-col items-center text-center">
-          {/* Prominent Large Standby Logo Directly Above Search Bar */}
-          <div className="relative w-full max-w-[1100px] h-[340px] sm:h-[420px] md:h-[480px] -mb-4 sm:-mb-6 md:-mb-8 animate-fade-in pointer-events-none select-none">
-            <Image
-              src="/images/standby-new-logo.png"
-              alt="Standby"
-              fill
-              className="object-contain drop-shadow-md"
-              priority
-            />
-          </div>
+      <div ref={heroScrollRef} style={{ height: "calc(100vh + 600px)" }} className="relative z-20">
+        <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-center px-4 sm:px-6 lg:px-8 pt-16">
+          {/* Page 1: Standby Logo & Search Bar */}
+          <motion.div
+            style={{
+              opacity: heroOpacity,
+              scale: heroScale,
+              y: heroY,
+            }}
+            className="w-full max-w-4xl mx-auto flex flex-col items-center text-center relative z-10 pointer-events-auto"
+          >
+            {/* Prominent Large Standby Logo Directly Above Search Bar */}
+            <div className="relative w-full max-w-[1100px] h-[340px] sm:h-[420px] md:h-[480px] -mb-4 sm:-mb-6 md:-mb-8 animate-fade-in pointer-events-none select-none">
+              <Image
+                src="/images/standby-new-logo.png"
+                alt="Standby"
+                fill
+                className="object-contain drop-shadow-md"
+                priority
+              />
+            </div>
 
-          {/* Main Airport Search Engine Component */}
-          <div className="w-full">
-            <AirportSearch
-              onSelectAirport={handleSelectAirport}
-              selectedAirport={destinationAirport}
-            />
-          </div>
+            {/* Main Airport Search Engine Component */}
+            <div className="w-full">
+              <AirportSearch
+                onSelectAirport={handleSelectAirport}
+                selectedAirport={destinationAirport}
+              />
+            </div>
 
-          {/* Scroll Down Call to Action */}
-          <div className="mt-16">
-            <button
-              onClick={scrollToCommand}
-              className="group flex flex-col items-center cursor-pointer"
-              aria-label="Scroll to Airspace & Telemetry"
-            >
-              <span className="mb-2 tracking-wider uppercase text-[11px] font-extrabold text-sky-950 bg-white/80 backdrop-blur-xs px-3.5 py-1 rounded-full border border-sky-200/80 shadow-xs">
-                Explore Airspace & Telemetry
-              </span>
-              <div className="w-10 h-10 rounded-full bg-white/95 border border-sky-300 shadow-md flex items-center justify-center group-hover:translate-y-1.5 transition-transform">
-                <ChevronDown className="w-5 h-5 text-sky-600 animate-bounce" />
-              </div>
-            </button>
-          </div>
+            {/* Scroll Down Call to Action */}
+            <div className="mt-14 sm:mt-16">
+              <button
+                onClick={scrollToCommand}
+                className="group flex flex-col items-center cursor-pointer"
+                aria-label="Scroll to Airspace & Telemetry"
+              >
+                <span className="mb-2 tracking-wider uppercase text-[11px] font-extrabold text-sky-950 bg-white/80 backdrop-blur-xs px-3.5 py-1 rounded-full border border-sky-200/80 shadow-xs">
+                  Explore Airspace & Telemetry
+                </span>
+                <div className="w-10 h-10 rounded-full bg-white/95 border border-sky-300 shadow-md flex items-center justify-center group-hover:translate-y-1.5 transition-transform">
+                  <ChevronDown className="w-5 h-5 text-sky-600 animate-bounce" />
+                </div>
+              </button>
+            </div>
+          </motion.div>
+
+          {/* Big Airplane Passing Directly Over The Whole Page 1 */}
+          <motion.div
+            style={{ x: planeX, y: planeY, rotate: planeRotate, opacity: planeOpacity }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-30"
+          >
+            <img
+              src="/images/private-jet.webp"
+              alt="Private jet flying across the screen"
+              className="w-auto h-[50vh] sm:h-[62vh] md:h-[72vh] max-w-none filter drop-shadow-[0_35px_60px_rgba(15,23,42,0.38)] drop-shadow-[0_12px_24px_rgba(2,132,199,0.25)]"
+              onError={(e) => {
+                e.currentTarget.src = "/images/jet-fallback.svg";
+              }}
+            />
+          </motion.div>
         </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* SEAMLESS AIRPLANE TRANSITION OVERLAY (PAGE 1 TO PAGE 2)                   */}
-      {/* ========================================================================= */}
-      <ScrollFlyIn
-        imageUrl="/images/private-jet.webp"
-        imageAlt="Private jet flying across the screen"
-        className="relative z-30"
-      />
-
-      {/* Puffy Cloud Divider 1 (Transition to Section 2) */}
-      <PuffyCloudDividerTop fill="rgba(255, 255, 255, 0.7)" className="-mb-1 z-20 relative" />
+      </div>
 
       {/* ========================================================================= */}
       {/* PART 2: COMMAND CENTER (COBE GLOBE WITH ARCS + FLIGHT & WEATHER INPUTS)   */}
       {/* ========================================================================= */}
-      <section
-        id="command-center"
-        ref={commandSectionRef}
-        className="relative z-20 bg-white/40 backdrop-blur-md py-16 px-4 sm:px-6 lg:px-8 border-y border-white/40"
+      <motion.div
+        style={{ opacity: commandOpacity, y: commandY }}
+        className="-mt-[100vh] relative z-20"
       >
+        {/* Puffy Cloud Divider 1 (Transition to Section 2) */}
+        <div className="-mb-1 relative">
+          <PuffyCloudDividerTop fill="rgba(255, 255, 255, 0.7)" />
+        </div>
+
+        <section
+          id="command-center"
+          ref={commandSectionRef}
+          className="bg-white/40 backdrop-blur-md py-16 px-4 sm:px-6 lg:px-8 border-y border-white/40"
+        >
         <div className="max-w-7xl mx-auto">
           {/* Section Heading */}
           <div className="text-center max-w-3xl mx-auto mb-10">
@@ -334,6 +422,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+    </motion.div>
 
       {/* Puffy Cloud Divider 2 (Transition to Section 3) */}
       <PuffyCloudDividerBottom fill="rgba(255, 255, 255, 0.7)" className="z-20 relative" />
