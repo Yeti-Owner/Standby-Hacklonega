@@ -1,0 +1,43 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+
+# Local runtimes, models, and generated caches
+.venv/
+venv/
+Underdog-Bark-3.0-Clean/
+.cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Recordings and local output
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.ogg
+*.webm
+*.log
+logs/
+outputs/
+flagged/
+gradio_cached_examples/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
