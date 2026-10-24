@@ -454,25 +454,6 @@ export default function FlightSearchBar({
         </div>
       )}
 
-      {/* 2. Helper & Status Row */}
-      <div className="mt-3 px-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
-        <p className="text-slate-600 text-[12px] leading-relaxed">
-          Include origin, destination, day and approximate departure time. Audio stays on your laptop.
-        </p>
-        {voiceReady && (
-          <span className="self-start sm:self-auto px-2.5 py-1 rounded-full font-semibold border text-[11px] whitespace-nowrap shadow-2xs bg-emerald-50 text-emerald-800 border-emerald-200">
-            Voice ready · {status?.voice.device || "local"}
-          </span>
-        )}
-      </div>
-
-      {/* Groq Usage Line */}
-      {status?.usage && (
-        <div className="mt-1 px-1 text-[11px] text-slate-500 font-mono">
-          {status.usage}
-        </div>
-      )}
-
       {/* Missing settings alert */}
       {status?.missing_settings && status.missing_settings.length > 0 && (
         <p className="mt-2 rounded-xl bg-amber-50 p-2.5 text-xs text-amber-900 border border-amber-200">
@@ -487,13 +468,13 @@ export default function FlightSearchBar({
         </p>
       )}
 
-      {/* 3. Action Buttons */}
-      <div className="mt-3.5 flex flex-col sm:flex-row gap-2.5">
+      {/* Centered Record Request Button */}
+      <div className="mt-3.5 flex justify-center">
         {recording ? (
           <button
             type="button"
             onClick={() => recorder.current?.stop()}
-            className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md transition-all cursor-pointer animate-pulse"
+            className="inline-flex items-center justify-center gap-2 py-2.5 px-6 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md transition-all cursor-pointer animate-pulse"
           >
             <Square className="w-4 h-4 fill-current" />
             Stop & review
@@ -503,22 +484,13 @@ export default function FlightSearchBar({
             type="button"
             disabled={busy || !voiceReady}
             onClick={() => void startRecording()}
-            className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold text-sm shadow-md transition-all cursor-pointer disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 py-2.5 px-6 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold text-sm shadow-md transition-all cursor-pointer disabled:cursor-not-allowed"
           >
             <Mic className="w-4 h-4" />
             Record request
           </button>
         )}
 
-        <button
-          type="button"
-          disabled={busy || recording || !voiceReady}
-          onClick={() => uploadInputRef.current?.click()}
-          className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white/90 hover:bg-white text-sky-900 border border-sky-200/90 font-bold text-sm shadow-2xs hover:border-sky-300 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Upload className="w-4 h-4 text-sky-600" />
-          Upload audio
-        </button>
         <input
           ref={uploadInputRef}
           type="file"

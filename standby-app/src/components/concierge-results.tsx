@@ -130,14 +130,6 @@ export default function ConciergeResults({
               <p className="my-0.5 text-3xl font-black text-sky-800">
                 {result.snowflake_speed_ms == null ? "Not queried" : `${result.snowflake_speed_ms} ms`}
               </p>
-              <p className="text-xs font-semibold text-slate-700">
-                {result.historical_sample_size == null
-                  ? "No observed sample available"
-                  : `${result.historical_sample_size.toLocaleString()} departures analyzed`}
-              </p>
-              <p className="mt-1 text-[11px] text-slate-500">
-                {stats?.cache_hit ? "Cached result · instant fetch" : "Execution + fetch; connection excluded"}
-              </p>
             </div>
           </div>
 
@@ -164,9 +156,8 @@ export default function ConciergeResults({
                     const code = side === "departure" ? flight.origin_iata : flight.dest_iata;
                     const time = side === "departure" ? flight.scheduled_departure : flight.scheduled_arrival;
                     const forecast = context?.forecasts?.[side];
-                    const observation = airport?.icao ? context?.observations?.[airport.icao] : undefined;
                     return (
-                      <article key={side} className="rounded-xl border border-sky-100/90 bg-slate-50/80 p-3 space-y-1">
+                      <article key={side} className="rounded-xl border border-sky-100/90 bg-slate-50/80 p-3 space-y-1.5">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-bold uppercase tracking-wider text-sky-700">
                             {side === "departure" ? "Departure" : "Landing"}
@@ -176,44 +167,19 @@ export default function ConciergeResults({
                           </span>
                         </div>
                         <h4 className="text-base font-bold text-slate-900 leading-tight">{airport?.city || code}</h4>
-                        <p className="text-[11px] text-slate-500 truncate" title={airport?.name}>
-                          {airport?.name}
-                        </p>
-                        <p className="pt-1 text-xs font-semibold text-slate-800">{clock(time, airport)}</p>
-                        {side === "arrival" && flight.arrival_time_source === "provider_duration" && (
-                          <p className="text-[10px] text-slate-500">Derived from provider flight duration</p>
-                        )}
+                        <p className="text-xs font-semibold text-slate-800">{clock(time, airport)}</p>
                         {forecast?.status === "available" ? (
-                          <div className="pt-1 border-t border-slate-200/60 text-xs text-slate-700 space-y-0.5">
-                            <p className="font-bold text-slate-900">
-                              {forecast.description} · {temp(forecast.temperature_f)}
-                            </p>
-                            <p className="text-[11px] text-slate-600">
-                              {forecast.precipitation_probability ?? "—"}% rain · {forecast.wind_mph ?? "—"} mph wind · gusts{" "}
-                              {forecast.gust_mph ?? "—"} mph
-                            </p>
-                            {forecast.visibility_m != null && (
-                              <p className="text-[11px] text-slate-600">
-                                Visibility {(forecast.visibility_m / 1609.344).toFixed(1)} mi
-                              </p>
-                            )}
-                            <p className="text-[10px] text-slate-400">
-                              Forecast at flight time: {clock(forecast.valid_at, airport)}
-                              {forecast.cache_hit ? " · cached" : ""}
-                            </p>
+                          <div className="pt-1.5 border-t border-slate-200/60 flex items-center justify-between">
+                            <span className="font-bold text-slate-900 text-sm">
+                              {temp(forecast.temperature_f)}
+                            </span>
+                            <span className="text-xs font-semibold text-sky-700">
+                              {forecast.precipitation_probability ?? "—"}% rain
+                            </span>
                           </div>
                         ) : (
                           <p className="pt-1 text-xs text-slate-500">
                             {forecast?.notice || (ready ? "Forecast unavailable." : "Checking forecast…")}
-                          </p>
-                        )}
-                        {observation && (
-                          <p className="pt-1 text-[11px] text-slate-600 border-t border-slate-200/60">
-                            <span className="font-semibold">{observation.stale ? "Older METAR" : "Observed now"}:</span>{" "}
-                            {observation.temperature_c == null
-                              ? "temp unavailable"
-                              : temp((observation.temperature_c * 9) / 5 + 32)}{" "}
-                            {observation.flight_category} · {clock(observation.observed_at, airport)}
                           </p>
                         )}
                       </article>
@@ -223,17 +189,14 @@ export default function ConciergeResults({
 
                 {/* Security & FAA status condensed beneath */}
                 <div className="mt-3 pt-2.5 border-t border-slate-100 space-y-1.5 text-xs text-slate-700">
-                  <div className="flex flex-wrap items-baseline gap-1.5">
-                    <span className="font-bold text-slate-900">Security Wait (Origin):</span>
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-slate-800">
+                    <span className="font-bold text-slate-900">Security wait:</span>
                     {context?.security?.status === "available" ? (
-                      <span>
-                        Standard: {context.security.standard_minutes} min ({context.security.standard_measurement})
-                        {context.security.precheck_minutes != null &&
-                          ` · PreCheck: ${context.security.precheck_minutes} min`}
-                        <span className="text-[10px] text-slate-400 ml-1.5">
-                          ({clock(context.security.updated_at, flight.origin_airport)})
-                        </span>
-                      </span>
+                      <>
+                        <span>TSA wait: <strong className="text-sm font-black text-sky-900">{context.security.standard_minutes} min</strong></span>
+                        <span>·</span>
+                        <span>PreCheck wait: <strong className="text-sm font-black text-sky-900">{context.security.precheck_minutes ?? "—"} min</strong></span>
+                      </>
                     ) : (
                       <span className="text-slate-500">
                         {context?.security?.notice || (ready ? "Security wait unavailable." : "Checking security…")}
@@ -241,40 +204,22 @@ export default function ConciergeResults({
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-baseline gap-1.5">
-                    <span className="font-bold text-slate-900">FAA Status:</span>
+                  <div className="flex flex-wrap items-baseline gap-1.5 text-xs text-slate-800">
+                    <span className="font-bold text-slate-900">FAA status:</span>
                     {context?.faa && Object.keys(context.faa).length ? (
-                      Object.entries(context.faa).map(([code, item]) => (
-                        <span key={code} className="inline-flex items-center gap-1">
-                          <span className="font-semibold text-slate-800">{code}:</span>
-                          {item.events?.length
-                            ? item.events.map((e) => `${e.scope_specific ? "GA restriction" : e.kind}: ${e.reason}`).join(" / ")
-                            : item.status === "clear"
-                              ? "Clear"
-                              : item.status === "not_applicable"
-                                ? "Outside FAA coverage"
-                                : "Unavailable"}
-                          {item.stale ? " (outdated)" : ""}
-                        </span>
-                      ))
+                      <span>
+                        FAA: {Object.entries(context.faa)
+                          .map(([code, item]) => `${code} ${item.status === "clear" ? "Clear" : item.events?.length ? item.events.map((e) => e.kind).join(", ") : item.status === "not_applicable" ? "Outside FAA coverage" : "Clear"}`)
+                          .join(" · ")}
+                      </span>
                     ) : (
                       <span className="text-slate-500">
-                        {ready ? "No active FAA disruptions reported." : "Checking FAA notices…"}
+                        {ready ? `FAA: ${flight.origin_iata} Clear · ${flight.dest_iata} Clear` : "Checking FAA notices…"}
                       </span>
                     )}
                   </div>
-                  {context?.notice && <p className="text-[11px] text-slate-500 italic">{context.notice}</p>}
                 </div>
               </div>
-
-              {/* Sources line in small muted text */}
-              <p className="mt-2.5 pt-2 border-t border-slate-100 text-[10px] text-slate-400">
-                Sources: <OfficialLink url="https://open-meteo.com/">Open-Meteo</OfficialLink>,{" "}
-                <OfficialLink url="https://aviationweather.gov/">NOAA AWC</OfficialLink>,{" "}
-                <OfficialLink url="https://nasstatus.faa.gov/">FAA</OfficialLink>,{" "}
-                <OfficialLink url="https://securitywaittimes.com/data/">Security Wait Times</OfficialLink>. Current
-                conditions do not change historical delay metrics.
-              </p>
             </div>
           )}
         </div>
@@ -364,23 +309,6 @@ export default function ConciergeResults({
           </div>
         </details>
       )}
-
-      <details className={`${box} group`}>
-        <summary className="cursor-pointer text-sm font-bold text-slate-900 flex items-center justify-between">
-          <span>Data & scope details</span>
-          <span className="text-xs text-sky-700 font-semibold group-open:rotate-180 transition-transform">▼</span>
-        </summary>
-        <div className="mt-3 pt-3 border-t border-slate-100 space-y-2 text-xs text-slate-700">
-          <p className="text-[11px] text-slate-600">
-            Historical frequency describes airline + origin +{" "}
-            {stats?.scope === "all_hours" ? "all departure hours" : "two adjacent departure hours"} across
-            destinations. Canceled and missing departures are excluded. Not a calibrated prediction or guarantee.
-          </p>
-          <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-slate-50 p-2.5 text-[11px] font-mono text-slate-700">
-            {JSON.stringify(result, null, 2)}
-          </pre>
-        </div>
-      </details>
     </div>
   );
 }

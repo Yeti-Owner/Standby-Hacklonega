@@ -369,22 +369,6 @@ export default function Home() {
                 onAnalyzeStart={scrollToCommand}
               />
             </div>
-
-            {/* Scroll Down Call to Action */}
-            <div className="mt-14 sm:mt-16">
-              <button
-                onClick={scrollToCommand}
-                className="group flex flex-col items-center cursor-pointer"
-                aria-label="Scroll to Airspace & Telemetry"
-              >
-                <span className="mb-2 tracking-wider uppercase text-[11px] font-extrabold text-sky-950 bg-white/80 backdrop-blur-xs px-3.5 py-1 rounded-full border border-sky-200/80 shadow-xs">
-                  Explore Airspace & Telemetry
-                </span>
-                <div className="w-10 h-10 rounded-full bg-white/95 border border-sky-300 shadow-md flex items-center justify-center group-hover:translate-y-1.5 transition-transform">
-                  <ChevronDown className="w-5 h-5 text-sky-600 animate-bounce" />
-                </div>
-              </button>
-            </div>
           </motion.div>
 
           {/* Big Airplane Passing Directly Over The Whole Page 1 */}

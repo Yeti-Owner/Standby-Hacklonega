@@ -14,8 +14,7 @@ export default function AirportMapCard({ airportCode, gate, terminal, side }: { 
   const [activeTerminal, setActiveTerminal] = useState(terminal?.trim() || "");
   const [draftTerminal, setDraftTerminal] = useState(activeTerminal);
   return <article>
-    <h4 className="mb-2 text-sm font-bold text-slate-700">{side === "departure" ? "Departure" : "Arrival"} · {airportCode}{activeTerminal && ` · Terminal ${activeTerminal}`}{activeGate && ` · Gate ${activeGate}`}</h4>
-    {!gate?.trim() && <p className="mb-3 text-xs text-slate-600">The flight search did not provide a gate. A known terminal shows an approximate terminal view. You can enter a terminal or gate from your boarding pass or airline app below.</p>}
+    <h4 className="mb-2 text-sm font-bold text-slate-700">{side === "departure" ? "Departure" : "Arrival"} · {airportCode}</h4>
     <form className="mb-3 flex flex-wrap items-end gap-2" onSubmit={event => {
       event.preventDefault();
       setActiveGate(draftGate.trim().toUpperCase());
@@ -29,7 +28,7 @@ export default function AirportMapCard({ airportCode, gate, terminal, side }: { 
         Gate at {airportCode}
         <input value={draftGate} onChange={event => setDraftGate(event.target.value)} maxLength={20} placeholder="e.g. B22" autoCapitalize="characters" className="w-36 rounded-lg border border-slate-300 bg-white px-3 py-2" />
       </label>
-      <button type="submit" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">{draftGate.trim() ? "Show gate" : draftTerminal.trim() ? "Show terminal" : "Show airport"}</button>
+      <button type="submit" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">Show airport</button>
     </form>
     <AirportGateMap airportCode={airportCode} gate={activeGate} terminal={activeTerminal} />
   </article>;
