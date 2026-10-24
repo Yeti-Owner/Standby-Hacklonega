@@ -14,6 +14,30 @@ actual results or explicitly labeled planning illustrations.
 
 `npm run lint` and `npm run build` run the frontend checks.
 
+## Airport terminal map
+
+`src/components/AirportGateMap.tsx` takes `airportCode` and `gate` and displays
+a non-interactive MapLibre WebGL vector map using OpenFreeMap Positron. The camera
+stays at zoom 16; the canvas preserves its drawing buffer. The wrapper applies
+grayscale and contrast. No map keys, geocoding, or Overpass calls are required;
+internet access is required for the style, vector tiles, fonts, and sprites.
+
+The static terminal centers in `src/lib/airport-map.ts` cover ATL, LAX, JFK, ORD,
+DFW, DEN, SFO, SEA, HND, and LHR. The gate pin intentionally marks that center,
+**not the gate's actual location**. Terminal/building/label coverage depends on
+the basemap; this version does not provide indoor routing or verified shops.
+Unsupported airports and loading failures show a text fallback.
+
+Flight results show maps when `departure_gate` or `arrival_gate` is supplied.
+The existing Aviationstack adapter preserves those fields; providers without
+gate data do not show a map. The Debug demo includes synthetic JFK/LHR gates
+for testing without flight-provider calls (map tiles still load from OpenFreeMap).
+
+For future rendering, pass a MapLibre style JSON/URL through optional `mapStyle`,
+or use optional `onLoad` and `event.target` to add native custom WebGL/GLSL layers
+or building extrusions. Keep those effects in the same canvas; no raster-map
+replacement is needed.
+
 ## Globe interaction
 
 Airport codes stay on the globe, with leader lines and collision-aware placement

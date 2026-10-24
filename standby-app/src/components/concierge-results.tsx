@@ -1,6 +1,12 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import type { AirportInfo, FlightResult } from "@/lib/concierge";
+
+const AirportGateMap = dynamic(() => import("@/components/AirportGateMap"), {
+  ssr: false,
+  loading: () => <p className="flex h-80 items-center justify-center rounded-xl bg-slate-100 text-sm text-slate-600">Loading terminal map…</p>,
+});
 
 const box = "rounded-2xl border border-sky-100 bg-white/95 p-5 shadow-lg";
 const safeUrl = (url?: string) => url?.startsWith("https://") ? url : undefined;
@@ -33,6 +39,17 @@ export default function ConciergeResults({ result }: { result: FlightResult }) {
       <p className="text-sm text-slate-600">{result.aircraft_or_status}</p>
       <p className="mt-2 text-xs text-slate-600">{result.schedule_source === "unverified_model_knowledge" ? "UNVERIFIED model suggestion — confirm with the airline" : `Schedule source: ${result.schedule_source || "Not queried"}`}</p>
     </div>
+    {flight && (flight.departure_gate?.trim() || flight.arrival_gate?.trim()) && <div className={box}>
+      <h3 className="mb-3 text-xl font-bold text-slate-900">Airport terminal map</h3>
+      <div className="space-y-5">{(["departure", "arrival"] as const).map(side => {
+        const gate = (side === "departure" ? flight.departure_gate : flight.arrival_gate)?.trim();
+        const code = side === "departure" ? flight.origin_iata : flight.dest_iata;
+        return gate ? <article key={side}>
+          <h4 className="mb-2 font-bold text-slate-700">{side === "departure" ? "Departure" : "Arrival"} · {code} · Gate {gate}</h4>
+          <AirportGateMap airportCode={code} gate={gate} />
+        </article> : null;
+      })}</div>
+    </div>}
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <div className={box}><h4 className="font-bold text-slate-700">Historical delay frequency</h4><p className="my-1 text-4xl font-bold text-sky-800">{result.delay_probability_pct == null ? "Unavailable" : `${result.delay_probability_pct.toFixed(1)}%`}</p><p className="text-sm text-slate-700">15+ minute departure delay</p><p className="text-sm text-slate-600">Average when late: {result.avg_delay_mins == null ? "unavailable" : `${result.avg_delay_mins} min`}</p></div>
       <div className={box}><h4 className="font-bold text-slate-700">Snowflake query speed</h4><p className="my-1 text-4xl font-bold text-sky-800">{result.snowflake_speed_ms == null ? "Not queried" : `${result.snowflake_speed_ms} ms`}</p><p className="text-sm text-slate-700">{result.historical_sample_size == null ? "No observed sample available" : `${result.historical_sample_size.toLocaleString()} historical departures`}</p><p className="text-xs text-slate-600">{stats?.cache_hit ? "Cached result · original query time" : "Execution + fetch; connection time excluded"}</p></div>

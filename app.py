@@ -623,6 +623,7 @@ def get_live_or_scheduled_flights(origin_iata: str, dest_iata: str,
                     flights.append({"flight_number": flight.get("iata"), "airline_name": airline.get("name"),
                         "airline_iata": airline.get("iata"), "origin_iata": dep.get("iata"),
                         "dest_iata": arr.get("iata"), "scheduled_departure": dep.get("scheduled"),
+                        "departure_gate": dep.get("gate"), "arrival_gate": arr.get("gate"),
                         "departure_timezone": dep.get("timezone"), "scheduled_arrival": arr.get("scheduled"),
                         "arrival_timezone": arr.get("timezone"), "duration_minutes": None,
                         "aircraft_or_status": row.get("flight_status") or "Scheduled"})

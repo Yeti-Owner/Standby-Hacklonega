@@ -193,6 +193,7 @@ def demo_result():
     arrival = departure + dt.timedelta(hours=7)
     flight = engine.normalize_flight(dict(flight_number='BA-DEMO', airline_name='British Airways', airline_iata='BA',
         origin_iata='JFK', dest_iata='LHR', scheduled_departure=departure.isoformat(), scheduled_arrival=arrival.isoformat(),
+        departure_gate='B22', arrival_gate='A10',
         aircraft_or_status='Demo fixture — not a real schedule'))
     stats = dict(total_flights=2400, delayed_flights=576, delay_prob_pct=24.0,
         avg_delay_when_late_mins=38.2, query_time_ms=8.4, source='demo_fixture', scope='hour_window',

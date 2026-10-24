@@ -42,10 +42,27 @@ class AdapterTests(unittest.TestCase):
         result=body['result']
         self.assertTrue(result['demo']);self.assertEqual(result['schedule_source'],'demo_fixture')
         self.assertEqual(result['selected_flight']['origin_iata'],'JFK');self.assertEqual(result['selected_flight']['dest_iata'],'LHR')
+        self.assertEqual(result['selected_flight']['departure_gate'],'B22')
+        self.assertEqual(result['travel_context']['flight']['arrival_gate'],'A10')
         self.assertEqual(result['request_interpretation']['tool_arguments']['approx_hour_24'],19)
         self.assertEqual(result['delay_probability_pct'],24.0)
         self.assertTrue(result['airline_support']['claim'].startswith('https://www.britishairways.com/'))
         self.assertEqual(before,engine._read_groq_usage())
+
+    def test_provider_gates_survive_schedule_normalization(self):
+        # Mock the existing flight lookup; the map must not need another provider call.
+        response=unittest.mock.Mock()
+        response.json.return_value={'data':[{
+            'flight':{'iata':'BA178'},'airline':{'iata':'BA','name':'British Airways'},
+            'departure':{'iata':'JFK','scheduled':'2026-10-25T19:15:00','gate':'B22'},
+            'arrival':{'iata':'LHR','scheduled':'2026-10-26T07:15:00','gate':'A10'}
+        }]}
+        with patch.dict(os.environ,{'AVIATIONSTACK_API_KEY':'offline-test'}), patch('requests.get',return_value=response) as lookup:
+            result=engine.get_live_or_scheduled_flights('JFK','LHR','2026-10-25',19)
+        self.assertEqual(result['source'],'aviationstack')
+        self.assertEqual(result['flights'][0]['departure_gate'],'B22')
+        self.assertEqual(result['flights'][0]['arrival_gate'],'A10')
+        self.assertEqual(lookup.call_count,1)
 
     def test_voice_requires_review_and_uses_edited_transcript(self):
         phrase=api.DEMO_TRANSCRIPT
