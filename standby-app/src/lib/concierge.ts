@@ -16,6 +16,15 @@ export type FlightResult = {
 export type Status = { voice: { phase: string; device?: string }; usage: string; missing_settings: string[]; demo_available: boolean };
 export type AnalysisEvent = { transcript: string; result: FlightResult | null; done: boolean };
 
+// Offer missing-letter corrections for review, never silently change the route.
+export function airportTranscriptSuggestion(transcript: string) {
+  const fragment = /\b(?:from|to)\s+((?:j[ .-]*f|f[ .-]*k))(?=\s+(?:to|tomorrow|today|on|at|around|about|next|this|in|airport)\b|\s*[,!?]|\s*$)/i.exec(transcript);
+  if (!fragment) return null;
+  const heard = fragment[1];
+  const start = fragment.index + fragment[0].length - heard.length;
+  return { heard, corrected: transcript.slice(0, start) + "JFK" + transcript.slice(start + heard.length) };
+}
+
 export async function checked(response: Response) {
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));

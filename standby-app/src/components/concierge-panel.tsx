@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Mic, Square, Upload, Plane, Keyboard, LoaderCircle } from "lucide-react";
 import DebugDemoButton from "@/components/debug-demo-button";
-import { checked, toWav, type AnalysisEvent, type FlightResult, type Status } from "@/lib/concierge";
+import { airportTranscriptSuggestion, checked, toWav, type AnalysisEvent, type FlightResult, type Status } from "@/lib/concierge";
 
 type Props = { routeRequest: string; onResult: (result: FlightResult | null) => void; onResolved: (result: FlightResult) => void };
 type Review = { transcript: string; review_token: string; speech_time_s: number };
@@ -100,6 +100,7 @@ export default function ConciergePanel({ routeRequest, onResolved, onResult }: P
   }
 
   const voiceReady = status?.voice.phase === "ready";
+  const airportSuggestion = airportTranscriptSuggestion(reviewText);
   return <div className="w-full space-y-4" id="concierge-engine">
     <div className="rounded-2xl border border-sky-100 bg-white/95 p-6 shadow-xl md:p-7">
       <h3 className="text-xl font-bold text-slate-900">Flight concierge</h3>
@@ -116,7 +117,15 @@ export default function ConciergePanel({ routeRequest, onResolved, onResult }: P
       {status?.demo_available && <DebugDemoButton disabled={busy || recording} onResult={event => { setConfirmed(event.transcript); setError(""); apply(event); setMessage("Demo fixtures loaded. No API calls were made."); }} />}
     </div>
     <dialog ref={dialog} aria-labelledby="transcript-title" onCancel={event => event.preventDefault()} className="m-auto w-[min(92vw,640px)] rounded-2xl border border-sky-200 bg-white p-6 text-slate-900 shadow-2xl backdrop:bg-slate-950/70 backdrop:backdrop-blur-sm">
-      <h2 id="transcript-title" className="text-3xl font-bold">Is this correct?</h2><p className="my-3 text-base text-slate-600">Edit anything Bark misheard. We’ll analyze exactly the text below when you choose Yes.</p><label htmlFor="reviewed-transcript" className="text-sm font-bold">Your transcript · click to edit</label><textarea id="reviewed-transcript" autoFocus className={`${inputStyle} mt-2`} rows={5} maxLength={6000} value={reviewText} onChange={event => setReviewText(event.target.value)} /><div className="mt-4 flex flex-col gap-2"><button type="button" className={primary} disabled={!reviewText.trim() || busy} onClick={() => { const token = review?.review_token; setReview(null); void analyze(reviewText, token); }}>Yes, analyze this request</button><button type="button" onClick={rejectReview} className="rounded-xl border border-slate-200 px-4 py-3 font-semibold">No, record again</button></div><p className="mt-3 text-xs text-slate-600">No flight search, Groq call or Snowflake query starts before Yes.</p>
+      <h2 id="transcript-title" className="text-3xl font-bold">Is this correct?</h2>
+      <p className="my-3 text-base text-slate-600">Edit anything Bark misheard. We’ll analyze exactly the text below when you choose Yes.</p>
+      <label htmlFor="reviewed-transcript" className="text-sm font-bold">Your transcript · click to edit</label>
+      <textarea id="reviewed-transcript" autoFocus className={`${inputStyle} mt-2`} rows={5} maxLength={6000} value={reviewText} onChange={event => setReviewText(event.target.value)} />
+      {airportSuggestion && <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-slate-800">
+        <p>Heard “{airportSuggestion.heard}”. Did you mean JFK (John F. Kennedy, New York)? Missing letters can be ambiguous.</p>
+        <button type="button" disabled={busy} onClick={() => setReviewText(airportSuggestion.corrected)} className="mt-2 rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold">Use JFK in transcript</button>
+      </div>}
+      <div className="mt-4 flex flex-col gap-2"><button type="button" className={primary} disabled={!reviewText.trim() || busy} onClick={() => { const token = review?.review_token; setReview(null); void analyze(reviewText, token); }}>Yes, analyze this request</button><button type="button" onClick={rejectReview} className="rounded-xl border border-slate-200 px-4 py-3 font-semibold">No, record again</button></div><p className="mt-3 text-xs text-slate-600">No flight search, Groq call or Snowflake query starts before Yes.</p>
     </dialog>
   </div>;
 }
