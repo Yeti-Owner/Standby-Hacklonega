@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 
 const AirportGateMap = dynamic(() => import("@/components/AirportGateMap"), {
   ssr: false,
-  loading: () => <p className="flex h-80 items-center justify-center rounded-xl bg-slate-100 text-sm text-slate-600">Loading terminal map…</p>,
+  loading: () => <p className="flex h-[420px] items-center justify-center rounded-xl bg-slate-100 text-sm text-slate-600 sm:h-[460px]">Loading terminal map…</p>,
 });
 
 export default function AirportMapCard({ airportCode, gate, terminal, side }: { airportCode: string; gate?: string | null; terminal?: string | null; side: "departure" | "arrival" }) {
@@ -15,7 +15,7 @@ export default function AirportMapCard({ airportCode, gate, terminal, side }: { 
   const [draftTerminal, setDraftTerminal] = useState(activeTerminal);
   return <article>
     <h4 className="mb-2 text-sm font-bold text-slate-700">{side === "departure" ? "Departure" : "Arrival"} · {airportCode}{activeTerminal && ` · Terminal ${activeTerminal}`}{activeGate && ` · Gate ${activeGate}`}</h4>
-    {!gate?.trim() && <p className="mb-3 text-xs text-slate-600">The flight search did not provide a gate. A known terminal shows an approximate terminal view. You can enter a terminal or gate from your boarding pass or airline app below.</p>}
+    {!gate?.trim() && <p className="mb-3 text-xs text-slate-600">The flight search did not provide a gate. Enter a published terminal to frame its building, or a gate to zoom to its mapped door.</p>}
     <form className="mb-3 flex flex-wrap items-end gap-2" onSubmit={event => {
       event.preventDefault();
       setActiveGate(draftGate.trim().toUpperCase());

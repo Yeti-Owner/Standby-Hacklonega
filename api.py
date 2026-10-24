@@ -15,6 +15,7 @@ from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 import app as engine
+from airport_maps import airport_map_data
 
 _ANALYSIS_LOCK = threading.Lock()
 _VOICE_LOCK = threading.Lock()
@@ -83,6 +84,16 @@ def status():
         usage = 'Usage counter needs attention; live requests remain protected.'
     return {'voice': dict(engine._ASR_STATE), 'usage': usage.replace('**', ''), 'missing_settings': missing,
             'demo_available': os.getenv('STANDBY_SHOW_DEMO') == '1' or not (engine.ROOT / '.env').exists() or bool(missing)}
+
+
+@api.get('/api/airport-map/{code}')
+def airport_map(code: str):
+    try:
+        return airport_map_data(code)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from None
+    except RuntimeError as exc:
+        raise HTTPException(503, str(exc)) from None
 
 
 class AnalysisRequest(BaseModel):

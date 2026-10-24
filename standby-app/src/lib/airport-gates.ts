@@ -1,4 +1,5 @@
 import type { FeatureCollection, Point } from "geojson";
+import { airportMapSnapshotDate, loadAirportMapData } from "./airport-map-data.ts";
 
 type GateNode = {
   type: "node";
@@ -44,26 +45,19 @@ function writeCache(key: string, data: GateResponse) {
 export async function loadAirportGates(
   airportCode: string,
   gate: string,
-  [longitude, latitude]: readonly [number, number],
 ): Promise<AirportGates> {
   const code = airportCode.trim().toUpperCase();
   const ref = gate.trim().toUpperCase();
   const airportKey = `airport_gates_${code}`;
   const gateKey = ref ? `airport_gate_${code}_${ref}` : airportKey;
-  let data = readCache(gateKey) ?? readCache(airportKey);
+  let data = airportMapSnapshotDate(code) ? undefined : readCache(gateKey) ?? readCache(airportKey);
 
   if (!data) {
     let pending = requests.get(code);
     if (!pending) {
       pending = (async () => {
-        const query = `[out:json][timeout:10];node["aeroway"="gate"](around:4000,${latitude},${longitude});out body;`;
-        const response = await fetch("https://overpass.private.coffee/api/interpreter", {
-          method: "POST",
-          body: new URLSearchParams({ data: query }),
-          signal: AbortSignal.timeout(15000),
-        });
-        if (!response.ok) throw new Error("Gate lookup unavailable.");
-        const result: unknown = await response.json();
+        const raw = await loadAirportMapData(code) as { elements: { type?: string; tags?: { aeroway?: string } }[] };
+        const result: unknown = { elements: raw.elements.filter(element => element.type === "node" && element.tags?.aeroway === "gate") };
         // Never permanently cache errors or partial timeout responses.
         if (!validResponse(result)) throw new Error("Incomplete gate response.");
         writeCache(airportKey, result);
