@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, Suspense } from "react";
+import { useState, useRef, useEffect, Suspense, useMemo } from "react";
 import Image from "next/image";
 import Cloudscape from "@/components/ui/cloudscape";
 import { GlobeCdn, CdnMarker, CdnArc } from "@/components/ui/cobe-globe-cdn";
@@ -131,7 +131,8 @@ export default function Home() {
     commandSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Build Arcs and Markers for GlobeCdn dynamically
+  // Keep route GPU buffers and camera focus stable across unrelated UI updates.
+  const { destLoc, flightMarkers, flightArcs } = useMemo(() => {
   const originLoc: [number, number] = [originAirport.coordinates[1], originAirport.coordinates[0]];
   const destLoc: [number, number] = [destinationAirport.coordinates[1], destinationAirport.coordinates[0]];
 
@@ -203,6 +204,9 @@ export default function Home() {
     location: destLoc,
     region: `TO: ${destinationAirport.iata}`,
   });
+
+    return { destLoc, flightMarkers, flightArcs };
+  }, [originAirport, destinationAirport, layoverCount, layoverAirport1, layoverAirport2]);
 
   // Calculate Great-circle distance
   function calculateDistanceNmi(coord1: [number, number], coord2: [number, number]) {
@@ -394,12 +398,12 @@ export default function Home() {
                 </div>
 
                 {/* Cobe 3D Globe with Arcs & Markers */}
-                <div className="w-full max-w-[480px] aspect-square mx-auto">
+                <div className="w-full max-w-[480px] mx-auto">
                   <GlobeCdn
                     markers={flightMarkers}
                     arcs={flightArcs}
                     focusLocation={destLoc}
-                    className="w-full h-full"
+                    className="w-full"
                   />
                 </div>
 
