@@ -48,9 +48,11 @@ def main():
             if any(process.poll() is not None for process in processes):
                 raise RuntimeError('A server stopped during startup. Read the message above.')
             try:
-                with urllib.request.urlopen(url+'/api/concierge/status',timeout=2) as response:
+                with urllib.request.urlopen(f'http://127.0.0.1:{api_port}/api/status',timeout=2) as response:
                     if response.status==200:
-                        break
+                        with urllib.request.urlopen(url,timeout=2) as web_response:
+                            if web_response.status==200:
+                                break
             except (OSError, TimeoutError):
                 time.sleep(.5)
         else:
