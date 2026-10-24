@@ -298,8 +298,8 @@ export default function Home() {
             }}
             className="w-full max-w-4xl mx-auto flex flex-col items-center text-center relative z-10 pointer-events-auto"
           >
-            {/* Prominent Large Standby Logo Directly Above Search Bar */}
-            <div className="relative w-full max-w-[1100px] h-[340px] sm:h-[420px] md:h-[480px] -mb-4 sm:-mb-6 md:-mb-8 animate-fade-in pointer-events-none select-none">
+            {/* Standby Logo Directly Above Search Bar */}
+            <div className="relative w-full max-w-[340px] sm:max-w-[420px] md:max-w-[480px] h-24 sm:h-32 md:h-36 mb-2 sm:mb-4 animate-fade-in pointer-events-none select-none">
               <Image
                 src="/images/standby-new-logo.png"
                 alt="Standby"
