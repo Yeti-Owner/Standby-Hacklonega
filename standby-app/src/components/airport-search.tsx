@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Airport, AIRPORTS } from "@/lib/airports";
-import { Search, Plane, MapPin, X, Compass, ChevronRight } from "lucide-react";
+import { Search, Plane, MapPin, X, Compass, ChevronRight, Mic, MicOff } from "lucide-react";
 
 interface AirportSearchProps {
   onSelectAirport: (airport: Airport) => void;
@@ -16,8 +16,54 @@ export default function AirportSearch({
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
+  const [isListening, setIsListening] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+
+        recognition.onstart = () => setIsListening(true);
+        recognition.onresult = (event: any) => {
+          const transcript = Array.from(event.results)
+            .map((result: any) => result[0].transcript)
+            .join("");
+          setQuery(transcript);
+          setIsOpen(true);
+        };
+        recognition.onerror = () => setIsListening(false);
+        recognition.onend = () => setIsListening(false);
+        recognitionRef.current = recognition;
+      }
+    }
+  }, []);
+
+  const handleVoiceSearch = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+          setIsListening(true);
+        } catch {
+          recognitionRef.current.stop();
+          setTimeout(() => recognitionRef.current?.start(), 150);
+        }
+      } else {
+        inputRef.current?.focus();
+      }
+    }
+  };
 
   // Filter airports
   const filteredAirports = query.trim() === ""
@@ -97,22 +143,44 @@ export default function AirportSearch({
             onKeyDown={handleKeyDown}
             placeholder="Search airports by city, name, or code (e.g., ATL, London, JFK)..."
             aria-label="Airport search"
-            className="w-full py-4 md:py-5 pr-12 text-slate-900 placeholder:text-slate-400 font-medium text-base md:text-lg bg-transparent focus:outline-none"
+            className="w-full py-4 md:py-5 pr-3 text-slate-900 placeholder:text-slate-400 font-medium text-base md:text-lg bg-transparent focus:outline-none"
           />
 
-          {query && (
+          <div className="flex items-center gap-1 pr-3.5 flex-shrink-0">
+            {query && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setIsOpen(false);
+                  inputRef.current?.focus();
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                aria-label="Clear search"
+                title="Clear"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+
             <button
-              onClick={() => {
-                setQuery("");
-                setIsOpen(false);
-                inputRef.current?.focus();
-              }}
-              className="absolute right-4 p-1.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
-              aria-label="Clear search"
+              type="button"
+              onClick={handleVoiceSearch}
+              aria-label={isListening ? "Stop listening" : "Search by voice"}
+              title={isListening ? "Listening... click to stop" : "Search by voice"}
+              className={`p-2 rounded-xl transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                isListening
+                  ? "text-rose-600 bg-rose-50 ring-2 ring-rose-400/40 animate-pulse"
+                  : "text-slate-400 hover:text-sky-600 hover:bg-sky-50 active:scale-95"
+              }`}
             >
-              <X className="w-5 h-5" />
+              {isListening ? (
+                <MicOff className="w-5 h-5 text-rose-600" />
+              ) : (
+                <Mic className="w-5 h-5" />
+              )}
             </button>
-          )}
+          </div>
         </div>
       </div>
 
