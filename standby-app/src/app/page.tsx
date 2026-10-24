@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect, Suspense } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Cloudscape from "@/components/ui/cloudscape";
 import { GlobeCdn, CdnMarker, CdnArc } from "@/components/ui/cobe-globe-cdn";
-import AirportSearch from "@/components/airport-search";
-import FlightInputs from "@/components/flight-inputs";
+import FlightSearchBar from "@/components/flight-search-bar";
 import ConciergeResults from "@/components/concierge-results";
 import TeamSection from "@/components/team-section";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -22,10 +21,10 @@ export default function Home() {
     () => AIRPORTS.find((a) => a.iata === "ZRH") || AIRPORTS[12] || AIRPORTS[1]
   );
   const [layoverCount, setLayoverCount] = useState<0 | 1 | 2>(0);
-  const [layoverAirport1, setLayoverAirport1] = useState<Airport>(
+  const [layoverAirport1] = useState<Airport>(
     () => AIRPORTS.find((a) => a.iata === "LHR") || AIRPORTS[4]
   );
-  const [layoverAirport2, setLayoverAirport2] = useState<Airport | null>(
+  const [layoverAirport2] = useState<Airport | null>(
     () => AIRPORTS.find((a) => a.iata === "DXB") || AIRPORTS[6]
   );
 
@@ -309,12 +308,16 @@ export default function Home() {
               />
             </div>
 
-            {/* Main Airport Search Engine Component */}
+            {/* Unified Flight Search Engine & Concierge Component */}
             <div className="w-full">
-              <AirportSearch
+              <FlightSearchBar
                 onSelectAirport={handleSelectAirport}
-                onVoiceRequest={scrollToCommand}
                 selectedAirport={destinationAirport}
+                originAirport={originAirport}
+                destinationAirport={destinationAirport}
+                onResult={setAnalysisResult}
+                onResolved={handleResolved}
+                onAnalyzeStart={scrollToCommand}
               />
             </div>
 
@@ -377,70 +380,47 @@ export default function Home() {
             </h2>
           </div>
 
-          {/* Split Screen Layout: Left = Cobe Globe with Lines, Right = Route & Weather Inputs */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-            {/* Left Column: Cobe Globe with Dynamic Flight Lines */}
-            <div className="lg:col-span-6 flex flex-col items-center">
-              <div className="w-full bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-7 shadow-xl border border-sky-100 relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-sky-300 flex flex-col items-center">
-                {/* Globe Header Telemetry */}
-                <div className="w-full flex items-center justify-between pb-4 border-b border-slate-100 mb-3 text-xs">
-                  <div className="flex items-center space-x-2 text-sky-700 font-mono">
-                    <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping" />
-                    <span className="font-extrabold uppercase tracking-wider">Flight route overview</span>
-                  </div>
-                  <div className="text-slate-700 font-mono font-bold text-xs bg-sky-50 border border-sky-200/80 px-3 py-1 rounded-full">
-                    {originAirport.iata} ➔ {destinationAirport.iata} {layoverCount > 0 ? `(${layoverCount} Stop${layoverCount > 1 ? "s" : ""})` : "(Non-stop)"}
-                  </div>
+          {/* Cobe 3D Globe Flight Route Overview */}
+          <div className="max-w-2xl mx-auto flex flex-col items-center">
+            <div className="w-full bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-7 shadow-xl border border-sky-100 relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-sky-300 flex flex-col items-center">
+              {/* Globe Header Telemetry */}
+              <div className="w-full flex items-center justify-between pb-4 border-b border-slate-100 mb-3 text-xs">
+                <div className="flex items-center space-x-2 text-sky-700 font-mono">
+                  <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping" />
+                  <span className="font-extrabold uppercase tracking-wider">Flight route overview</span>
                 </div>
-
-                {/* Cobe 3D Globe with Arcs & Markers */}
-                <div className="w-full max-w-[480px] aspect-square mx-auto">
-                  <GlobeCdn
-                    markers={flightMarkers}
-                    arcs={flightArcs}
-                    focusLocation={destLoc}
-                    className="w-full h-full"
-                  />
-                </div>
-
-                {/* Route Waypoint Stats Below Globe */}
-                <div className="w-full mt-4 pt-4 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                    <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Total Distance</span>
-                    <span className="text-slate-900 font-bold font-mono text-sm">{totalDistanceNmi.toLocaleString()} nmi</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                    <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Illustrative flight time</span>
-                    <span className="text-slate-900 font-bold font-mono text-sm">{hoursStr}</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                    <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Flight Route</span>
-                    <span className="text-sky-700 font-bold font-mono text-xs truncate block">
-                      {layoverCount === 0 ? "Direct Non-Stop" : `${layoverCount} Layover Leg${layoverCount > 1 ? "s" : ""}`}
-                    </span>
-                  </div>
+                <div className="text-slate-700 font-mono font-bold text-xs bg-sky-50 border border-sky-200/80 px-3 py-1 rounded-full">
+                  {originAirport.iata} ➔ {destinationAirport.iata} {layoverCount > 0 ? `(${layoverCount} Stop${layoverCount > 1 ? "s" : ""})` : "(Non-stop)"}
                 </div>
               </div>
-            </div>
 
-            {/* Right Column: Question Boxes (Flight Route & Weather) */}
-            <div className="lg:col-span-6 flex justify-center">
-              <Suspense fallback={<p className="rounded-2xl bg-white/95 p-6 text-sky-900">Loading your flight controls…</p>}>
-              <FlightInputs
-                onResolved={handleResolved}
-                onResult={setAnalysisResult}
-                originAirport={originAirport}
-                onSelectOrigin={setOriginAirport}
-                destinationAirport={destinationAirport}
-                onSelectDestination={setDestinationAirport}
-                layoverCount={layoverCount}
-                onChangeLayoverCount={setLayoverCount}
-                layoverAirport1={layoverAirport1}
-                onSelectLayover1={setLayoverAirport1}
-                layoverAirport2={layoverAirport2}
-                onSelectLayover2={setLayoverAirport2}
-              />
-              </Suspense>
+              {/* Cobe 3D Globe with Arcs & Markers */}
+              <div className="w-full max-w-[480px] aspect-square mx-auto">
+                <GlobeCdn
+                  markers={flightMarkers}
+                  arcs={flightArcs}
+                  focusLocation={destLoc}
+                  className="w-full h-full"
+                />
+              </div>
+
+              {/* Route Waypoint Stats Below Globe */}
+              <div className="w-full mt-4 pt-4 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Total Distance</span>
+                  <span className="text-slate-900 font-bold font-mono text-sm">{totalDistanceNmi.toLocaleString()} nmi</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Illustrative flight time</span>
+                  <span className="text-slate-900 font-bold font-mono text-sm">{hoursStr}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Flight Route</span>
+                  <span className="text-sky-700 font-bold font-mono text-xs truncate block">
+                    {layoverCount === 0 ? "Direct Non-Stop" : `${layoverCount} Layover Leg${layoverCount > 1 ? "s" : ""}`}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
           {analysisResult && <div className="mt-8"><ConciergeResults result={analysisResult} /></div>}
