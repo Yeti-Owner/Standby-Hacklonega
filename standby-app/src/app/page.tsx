@@ -9,7 +9,7 @@ import FlightInputs from "@/components/flight-inputs";
 import TeamSection from "@/components/team-section";
 import { PuffyCloudDividerTop, PuffyCloudDividerBottom } from "@/components/puffy-cloud-divider";
 import { Airport, AIRPORTS } from "@/lib/airports";
-import { Plane, ChevronDown, Compass, Globe2, Radio, Sparkles } from "lucide-react";
+import { ChevronDown, Globe2 } from "lucide-react";
 
 export default function Home() {
   // Default to Atlanta (ATL) or null until user searches
@@ -96,41 +96,14 @@ export default function Home() {
       {/* ========================================================================= */}
       {/* PART 1: LANDING PAGE HERO                                                */}
       {/* ========================================================================= */}
-      <section className="relative min-h-[92vh] flex flex-col items-center justify-center px-4 sm:px-6 pt-12 pb-24 text-center z-10">
-        <div className="max-w-4xl mx-auto flex flex-col items-center">
-          {/* App Logo Display */}
-          <div className="relative mb-6 group cursor-default">
-            <div className="absolute -inset-4 bg-sky-400/20 rounded-full blur-2xl group-hover:bg-sky-400/35 transition-all duration-700 animate-pulse-glow" />
-            
-            <div className="relative w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 bg-white/95 rounded-3xl p-5 shadow-2xl border-2 border-white/80 animate-float-gentle transition-transform duration-500">
-              <Image
-                src="/images/standby-logo.png"
-                alt="Standby App Big Logo"
-                fill
-                className="object-contain p-3"
-                priority
-              />
-            </div>
-          </div>
-
-          {/* App Brand Title */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-sky-200/80 text-sky-800 text-xs font-bold tracking-widest uppercase mb-4 shadow-xs">
-            <Radio className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
-            Global Airway Intelligence System
-          </div>
-
-          {/* Main User Specified Headline */}
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-slate-950 tracking-tight leading-[1.08] mb-4">
+      <section className="relative min-h-[85vh] flex flex-col items-center justify-center px-4 sm:px-6 pt-8 pb-16 text-center z-10">
+        <div className="max-w-4xl mx-auto flex flex-col items-center w-full">
+          {/* Main Headline */}
+          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-slate-950 tracking-tight leading-[1.06] mb-8 drop-shadow-xs">
             Where are you going next?
           </h1>
 
-          <div className="bg-white/80 backdrop-blur-md px-6 py-2.5 rounded-2xl border border-sky-100 shadow-sm max-w-2xl mb-8">
-            <p className="text-base sm:text-lg text-slate-800 font-semibold leading-relaxed">
-              Search any international airport across the world to load live airspace coordinates, arrival schedules, and meteorological telemetry.
-            </p>
-          </div>
-
-          {/* Airport Search Engine Component */}
+          {/* Main Airport Search Engine Component */}
           <div className="w-full">
             <AirportSearch
               onSelectAirport={handleSelectAirport}
@@ -138,34 +111,17 @@ export default function Home() {
             />
           </div>
 
-          {/* Destination Preview Tag */}
-          {selectedAirport && (
-            <div className="mt-8 inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 backdrop-blur-md rounded-2xl border border-sky-200/80 shadow-md animate-in fade-in zoom-in-95 duration-300">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-xs text-slate-500 font-medium">Selected Destination:</span>
-              <span className="text-sm font-bold text-sky-950">
-                {selectedAirport.city} ({selectedAirport.iata})
-              </span>
-              <button
-                onClick={scrollToCommand}
-                className="text-xs font-bold text-sky-600 hover:text-sky-800 underline flex items-center gap-1 cursor-pointer ml-1"
-              >
-                Inspect Telemetry
-                <ChevronDown className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-
           {/* Scroll Down Call to Action */}
-          <div className="mt-12">
+          <div className="mt-16">
             <button
               onClick={scrollToCommand}
               className="group flex flex-col items-center cursor-pointer"
+              aria-label="Scroll to Airspace & Telemetry"
             >
-              <span className="mb-2 tracking-wider uppercase text-xs font-extrabold text-sky-950 bg-white/80 backdrop-blur-xs px-3.5 py-1 rounded-full border border-sky-200/80 shadow-xs">
+              <span className="mb-2 tracking-wider uppercase text-[11px] font-extrabold text-sky-950 bg-white/80 backdrop-blur-xs px-3.5 py-1 rounded-full border border-sky-200/80 shadow-xs">
                 Explore Airspace & Telemetry
               </span>
-              <div className="w-10 h-10 rounded-full bg-white/95 border border-sky-300 shadow-lg flex items-center justify-center group-hover:translate-y-1.5 transition-transform">
+              <div className="w-10 h-10 rounded-full bg-white/95 border border-sky-300 shadow-md flex items-center justify-center group-hover:translate-y-1.5 transition-transform">
                 <ChevronDown className="w-5 h-5 text-sky-600 animate-bounce" />
               </div>
             </button>
