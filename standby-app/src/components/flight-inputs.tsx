@@ -194,17 +194,6 @@ export default function FlightInputs({ selectedAirport }: FlightInputsProps) {
             </div>
           </div>
         </div>
-
-        {/* Standby clearance badge */}
-        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-          <div className="flex items-center gap-1 text-emerald-600 font-medium">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Flight Slot Monitored
-          </div>
-          <span className="font-mono text-slate-400 text-[11px]">
-            Standby Mode: Active
-          </span>
-        </div>
       </div>
 
       {/* Box 2: Weather & Meteorological Telemetry */}
@@ -233,15 +222,6 @@ export default function FlightInputs({ selectedAirport }: FlightInputsProps) {
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-sky-600" : ""}`} />
             <span>{isSyncing ? "Syncing..." : "Sync"}</span>
           </button>
-        </div>
-
-        {/* Sync Info notice */}
-        <div className="mb-4 text-xs text-slate-500 flex items-center justify-between bg-sky-50/50 p-2.5 rounded-lg border border-sky-100">
-          <span className="flex items-center gap-1.5 text-sky-900 font-medium">
-            <Info className="w-3.5 h-3.5 text-sky-600" />
-            Live Forecast Engine Ready
-          </span>
-          <span className="text-[11px] font-mono text-slate-400">{lastSyncTime}</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">

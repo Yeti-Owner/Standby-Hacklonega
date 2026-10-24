@@ -9,7 +9,7 @@ import FlightInputs from "@/components/flight-inputs";
 import TeamSection from "@/components/team-section";
 import { PuffyCloudDividerTop, PuffyCloudDividerBottom } from "@/components/puffy-cloud-divider";
 import { Airport, AIRPORTS } from "@/lib/airports";
-import { ChevronDown, Globe2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 export default function Home() {
   // Default to Atlanta (ATL) or null until user searches
@@ -141,17 +141,10 @@ export default function Home() {
       >
         <div className="max-w-7xl mx-auto">
           {/* Section Heading */}
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/80 border border-sky-200/80 text-sky-900 text-xs font-bold tracking-wider uppercase mb-3 shadow-xs">
-              <Globe2 className="w-3.5 h-3.5 text-sky-600" />
-              Live Flight & Meteorological Telemetry
-            </div>
+          <div className="text-center max-w-3xl mx-auto mb-10">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-950 tracking-tight">
               Global Arrival Station Command
             </h2>
-            <p className="mt-3 text-slate-800 text-base sm:text-lg font-semibold">
-              Interact with the live 3D dotted earth visualization on the left, and adjust flight arrival parameters with synchronized weather forecast telemetry on the right.
-            </p>
           </div>
 
           {/* Split Screen Layout: Left = Dotted Globe, Right = Question Boxes */}
