@@ -91,7 +91,7 @@ export default function Home() {
       <section className="relative min-h-[85vh] flex flex-col items-center justify-center px-4 sm:px-6 pt-2 pb-16 text-center z-10">
         <div className="max-w-5xl mx-auto flex flex-col items-center w-full">
           {/* Prominently Sized Standby Logo Centered Beautifully Above Search Bar */}
-          <div className="relative w-full max-w-[340px] sm:max-w-[540px] md:max-w-[700px] lg:max-w-[840px] xl:max-w-[940px] h-48 sm:h-64 md:h-80 lg:h-96 mb-6 sm:mb-8 flex items-center justify-center animate-float-gentle">
+          <div className="relative w-full max-w-[400px] sm:max-w-[620px] md:max-w-[820px] lg:max-w-[980px] xl:max-w-[1100px] h-60 sm:h-80 md:h-[420px] lg:h-[480px] -mb-4 sm:-mb-6 md:-mb-8 flex items-center justify-center animate-float-gentle">
             <Image
               src="/images/standby-new-logo.png"
               alt="Standby"
