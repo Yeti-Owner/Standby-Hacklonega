@@ -299,7 +299,7 @@ export default function Home() {
             className="w-full max-w-4xl mx-auto flex flex-col items-center text-center relative z-10 pointer-events-auto"
           >
             {/* Standby Logo Directly Above Search Bar */}
-            <div className="relative w-full max-w-[340px] sm:max-w-[420px] md:max-w-[480px] h-24 sm:h-32 md:h-36 mb-2 sm:mb-4 animate-fade-in pointer-events-none select-none">
+            <div className="relative w-full max-w-md sm:max-w-xl md:max-w-2xl h-44 sm:h-56 md:h-64 mb-3 sm:mb-5 animate-fade-in pointer-events-none select-none">
               <Image
                 src="/images/standby-new-logo.png"
                 alt="Standby"
