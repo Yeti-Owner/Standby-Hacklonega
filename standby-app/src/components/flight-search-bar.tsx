@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Search, Plane, X, ChevronRight, Mic, Square, Upload, LoaderCircle } from "lucide-react";
+import { Search, X, ChevronRight, Mic, Square, Upload, LoaderCircle } from "lucide-react";
 import { Airport, AIRPORTS } from "@/lib/airports";
 import DebugDemoButton from "@/components/debug-demo-button";
 import { checked, toWav, type AnalysisEvent, type FlightResult, type Status } from "@/lib/concierge";
@@ -20,8 +20,6 @@ type Review = { transcript: string; review_token: string; speech_time_s: number 
 
 export default function FlightSearchBar({
   onSelectAirport,
-  originAirport,
-  destinationAirport,
   onResult,
   onResolved,
   onAnalyzeStart,
@@ -275,14 +273,6 @@ export default function FlightSearchBar({
     }
   };
 
-  const handleAnalyzeDirectRoute = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
-    const directRouteRequest = `From ${originAirport.iata} to ${destinationAirport.iata} on ${dateStr} at 19:00`;
-    setQuery(`Direct flight: ${originAirport.iata} ➔ ${destinationAirport.iata}`);
-    void analyze(directRouteRequest);
-  };
 
   function rejectReview() {
     if (review) {
@@ -331,7 +321,6 @@ export default function FlightSearchBar({
 
   const voiceReady = status?.voice.phase === "ready";
   const isRateLimited = status?.usage?.includes("50 / 50 requests") ?? false;
-  const canAnalyzeDirectRoute = originAirport && destinationAirport && originAirport.iata !== destinationAirport.iata;
 
   return (
     <div ref={containerRef} className="w-full max-w-2xl mx-auto relative z-40">
@@ -542,27 +531,6 @@ export default function FlightSearchBar({
         />
       </div>
 
-      {/* Full-width Direct Route Button */}
-      <div className="mt-2.5">
-        <button
-          type="button"
-          disabled={busy || recording || !canAnalyzeDirectRoute || isRateLimited}
-          onClick={handleAnalyzeDirectRoute}
-          className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-sky-50 hover:bg-sky-100/80 border border-sky-200 text-sky-900 font-bold text-sm shadow-2xs hover:border-sky-300 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {busy ? (
-            <>
-              <LoaderCircle className="w-4 h-4 animate-spin text-sky-600" />
-              Analyzing route & historical delays…
-            </>
-          ) : (
-            <>
-              <Plane className="w-4 h-4 text-sky-600" />
-              Analyze selected direct route ({originAirport.iata} ➔ {destinationAirport.iata})
-            </>
-          )}
-        </button>
-      </div>
 
       {/* Inline Feedback Messages */}
       {message && (

@@ -2,18 +2,17 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Airport, AIRPORTS } from "@/lib/airports";
-import { Search, Plane, X, ChevronRight, Mic } from "lucide-react";
+import { Search, X, ChevronRight, Mic } from "lucide-react";
 
 interface AirportSearchProps {
   onSelectAirport: (airport: Airport) => void;
   onVoiceRequest: () => void;
-  selectedAirport: Airport | null;
+  selectedAirport?: Airport | null;
 }
 
 export default function AirportSearch({
   onSelectAirport,
   onVoiceRequest,
-  selectedAirport,
 }: AirportSearchProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -70,7 +69,6 @@ export default function AirportSearch({
     }
   };
 
-  const quickPicks = ["ATL", "JFK", "LHR", "HND", "DXB", "LAX"];
 
   return (
     <div ref={containerRef} className="w-full max-w-2xl mx-auto relative z-40">
