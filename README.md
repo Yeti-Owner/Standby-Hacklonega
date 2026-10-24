@@ -102,3 +102,20 @@ audio-dependent decoding bound. Snowflake sessions explicitly log out on close.
   guaranteed screening durations.
 - [airportsdata](https://github.com/mborsetti/airportsdata), MIT; airport codes,
   names, coordinates and timezones are resolved locally.
+
+
+## Airline disruption and rewards help
+
+After a provider resolves a flight, expand the airline help section beneath the
+results for delay/cancellation options, expense or compensation instructions,
+official claim links, and the airline loyalty program. Curated guides cover BA,
+Delta, American, United, JetBlue, Virgin Atlantic, ANA and JAL. Other carriers get
+general steps and relevant US/UK/European regulator links, without guessed offers.
+Confirm the operating airline on codeshares. Guidance describes possible options,
+not an award decision or a prediction that the flight will be disrupted.
+
+This feature runs locally from a small source-linked registry in `app.py`; it adds
+no Groq, SerpApi, Snowflake or background web requests and stores no passenger data.
+Official links open in your browser; claims and loyalty signups happen there.
+Policy summaries were reviewed on 2026-10-24. Review `AIRLINE_SUPPORT` and its date
+when updating the app; linked current airline terms take precedence.
