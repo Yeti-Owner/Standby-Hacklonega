@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
+import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
+type LandFeature = Feature<Polygon | MultiPolygon>;
 
 interface RotatingEarthProps {
   width?: number;
@@ -24,10 +26,10 @@ export default function RotatingEarth({
 
   // Keep a ref to coordinates for access in render loop
   const targetCoordsRef = useRef<[number, number] | null>(selectedCoordinates);
-  targetCoordsRef.current = selectedCoordinates;
+  useEffect(() => { targetCoordsRef.current = selectedCoordinates; }, [selectedCoordinates]);
 
   const airportCodeRef = useRef<string | null>(selectedAirportCode);
-  airportCodeRef.current = selectedAirportCode;
+  useEffect(() => { airportCodeRef.current = selectedAirportCode; }, [selectedAirportCode]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -43,8 +45,8 @@ export default function RotatingEarth({
       return { containerWidth, containerHeight };
     };
 
-    let { containerWidth, containerHeight } = getDims();
-    let radius = Math.min(containerWidth, containerHeight) / 2.3;
+    const { containerWidth, containerHeight } = getDims();
+    const radius = Math.min(containerWidth, containerHeight) / 2.3;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = containerWidth * dpr;
@@ -78,7 +80,7 @@ export default function RotatingEarth({
       return inside;
     };
 
-    const pointInFeature = (point: [number, number], feature: any): boolean => {
+    const pointInFeature = (point: [number, number], feature: LandFeature): boolean => {
       const geometry = feature.geometry;
       if (!geometry) return false;
 
@@ -114,7 +116,7 @@ export default function RotatingEarth({
       return false;
     };
 
-    const generateDotsInPolygon = (feature: any, dotSpacing = 16) => {
+    const generateDotsInPolygon = (feature: LandFeature, dotSpacing = 16) => {
       const dots: [number, number][] = [];
       const bounds = d3.geoBounds(feature);
       const [[minLng, minLat], [maxLng, maxLat]] = bounds;
@@ -139,7 +141,7 @@ export default function RotatingEarth({
     }
 
     const allDots: DotData[] = [];
-    let landFeatures: any = null;
+    let landFeatures: FeatureCollection<Polygon | MultiPolygon> | null = null;
 
     let pulseAnim = 0;
 
@@ -183,7 +185,7 @@ export default function RotatingEarth({
 
         // Draw land outlines
         context.beginPath();
-        landFeatures.features.forEach((feature: any) => {
+        landFeatures.features.forEach((feature: LandFeature) => {
           path(feature);
         });
         context.strokeStyle = "rgba(56, 189, 248, 0.45)";
@@ -259,10 +261,11 @@ export default function RotatingEarth({
 
         if (!response.ok) throw new Error("Failed to load land data");
 
-        landFeatures = await response.json();
+        const loaded: FeatureCollection<Polygon | MultiPolygon> = await response.json();
+        landFeatures = loaded;
 
         // Generate dots for all land features
-        landFeatures.features.forEach((feature: any) => {
+        landFeatures.features.forEach((feature: LandFeature) => {
           const dots = generateDotsInPolygon(feature, 16);
           dots.forEach(([lng, lat]) => {
             allDots.push({ lng, lat });

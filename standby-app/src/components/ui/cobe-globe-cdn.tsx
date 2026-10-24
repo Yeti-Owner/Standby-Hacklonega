@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useCallback, useState } from "react"
+import { useEffect, useRef, useCallback } from "react"
 import createGlobe from "cobe"
 
 export interface CdnMarker {
@@ -59,31 +59,7 @@ export function GlobeCdn({
   const phiOffsetRef = useRef(0)
   const thetaOffsetRef = useRef(0)
   const isPausedRef = useRef(false)
-  const [traffic, setTraffic] = useState(() =>
-    arcs.map((a, i) => ({ id: a.id, value: [420, 380, 290, 185, 156, 134][i] || 100 }))
-  )
-
-  // Keep traffic count in sync with arcs
-  useEffect(() => {
-    setTraffic(
-      arcs.map((a, i) => ({
-        id: a.id,
-        value: [420, 380, 290, 185, 156, 134][i] || Math.floor(150 + Math.random() * 200),
-      }))
-    )
-  }, [arcs])
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTraffic((data) =>
-        data.map((t) => ({
-          ...t,
-          value: Math.max(50, t.value + Math.floor(Math.random() * 21) - 10),
-        }))
-      )
-    }, 250)
-    return () => clearInterval(interval)
-  }, [])
+  const traffic = arcs.map(arc => ({ id: arc.id }));
 
   // Smoothly rotate globe towards focusLocation if provided
   useEffect(() => {
@@ -131,7 +107,9 @@ export function GlobeCdn({
   }, [handlePointerUp])
 
   // Update existing globe instance when markers or arcs change dynamically
+  const routeRef = useRef({ markers: markers.map(m => ({ location: m.location, size: 0.014, id: m.id })), arcs: arcs.map(a => ({ from: a.from, to: a.to, id: a.id })) });
   useEffect(() => {
+    routeRef.current = { markers: markers.map(m => ({ location: m.location, size: 0.014, id: m.id })), arcs: arcs.map(a => ({ from: a.from, to: a.to, id: a.id })) };
     if (globeRef.current) {
       globeRef.current.update({
         markers: markers.map((m) => ({ location: m.location, size: 0.014, id: m.id })),
@@ -164,14 +142,16 @@ export function GlobeCdn({
         markerColor: [0.08, 0.45, 0.85],
         glowColor: [0.94, 0.93, 0.91],
         markerElevation: 0.02,
-        markers: markers.map((m) => ({ location: m.location, size: 0.014, id: m.id })),
-        arcs: arcs.map((a) => ({ from: a.from, to: a.to, id: a.id })),
+        markers: [],
+        arcs: [],
         arcColor: [0.1, 0.4, 0.8],
         arcWidth: 0.8,
         arcHeight: 0.3,
         opacity: 0.8,
       })
       globeRef.current = globe
+      // Initial state and updates share the same effect below.
+      globe.update(routeRef.current)
 
       function animate() {
         if (!isPausedRef.current) phi += speed
@@ -324,7 +304,7 @@ export function GlobeCdn({
             boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
           }}
         >
-          {t.value} kts • Flight Active
+          Illustrative route
         </div>
       ))}
     </div>

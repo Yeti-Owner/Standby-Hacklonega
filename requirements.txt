@@ -11,3 +11,8 @@ soundfile>=0.13,<1
 soxr>=0.5,<2
 airportsdata>=2024.1
 tzdata>=2024.1
+
+# Local adapter for Tomas's React frontend (also used by Gradio internally).
+fastapi>=0.115,<1
+uvicorn>=0.30,<1
+python-multipart>=0.0.18,<1

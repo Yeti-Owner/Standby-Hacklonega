@@ -1,25 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import ConciergePanel from "@/components/concierge-panel";
+import type { FlightResult } from "@/lib/concierge";
 import { Airport, AIRPORTS } from "@/lib/airports";
-import {
-  Calendar,
-  Clock,
-  Plane,
-  CloudRain,
-  Thermometer,
-  Wind,
-  Gauge,
-  Droplets,
-  RefreshCw,
-  ArrowRight,
-  ArrowLeftRight,
-  MapPin,
-  Route,
-} from "lucide-react";
+import { Calendar, Clock, Plane, ArrowRight, ArrowLeftRight, MapPin, Route } from "lucide-react";
 
 interface FlightInputsProps {
-  selectedAirport: Airport | null;
+  onResolved: (result: FlightResult) => void;
+  onResult: (result: FlightResult | null) => void;
   originAirport: Airport;
   onSelectOrigin: (airport: Airport) => void;
   destinationAirport: Airport;
@@ -33,7 +22,8 @@ interface FlightInputsProps {
 }
 
 export default function FlightInputs({
-  selectedAirport,
+  onResolved,
+  onResult,
   originAirport,
   onSelectOrigin,
   destinationAirport,
@@ -45,51 +35,11 @@ export default function FlightInputs({
   layoverAirport2,
   onSelectLayover2,
 }: FlightInputsProps) {
-  // Flight Arrival Telemetry State
-  const [arrivalDate, setArrivalDate] = useState("2026-10-25");
-  const [arrivalHour, setArrivalHour] = useState("14:30");
-  const [aircraftCode, setAircraftCode] = useState("B77W");
-
-  useEffect(() => {
-    const today = new Date();
-    today.setDate(today.getDate() + 1);
-    setArrivalDate(today.toISOString().split("T")[0]);
-  }, []);
-
-  // Weather Telemetry State (Pre-filled with airport defaults, fully editable, ready for API sync)
-  const activeAirport = destinationAirport || selectedAirport;
-  const [temp, setTemp] = useState(activeAirport ? activeAirport.defaultTemp : 20);
-  const [tempUnit, setTempUnit] = useState<"C" | "F">("C");
-  const [humidity, setHumidity] = useState(activeAirport ? activeAirport.defaultHumidity : 60);
-  const [precipitation, setPrecipitation] = useState("0.0 mm (Nil)");
-  const [windDir, setWindDir] = useState(activeAirport ? activeAirport.defaultWindDir : 280);
-  const [windSpeed, setWindSpeed] = useState(activeAirport ? activeAirport.defaultWindKts : 10);
-  const [pressure, setPressure] = useState(activeAirport ? activeAirport.defaultPressure : 1013);
-  const [isSyncing, setIsSyncing] = useState(false);
-
-  // Update weather whenever selected destination airport changes
-  useEffect(() => {
-    if (activeAirport) {
-      setTemp(activeAirport.defaultTemp);
-      setHumidity(activeAirport.defaultHumidity);
-      setWindDir(activeAirport.defaultWindDir);
-      setWindSpeed(activeAirport.defaultWindKts);
-      setPressure(activeAirport.defaultPressure);
-    }
-  }, [activeAirport]);
-
-  const simulateWeatherSync = () => {
-    setIsSyncing(true);
-    setTimeout(() => {
-      if (activeAirport) {
-        const variance = (Math.random() - 0.5) * 3;
-        setTemp(Math.round(activeAirport.defaultTemp + variance));
-        setWindSpeed(Math.max(2, Math.round(activeAirport.defaultWindKts + variance)));
-        setHumidity(Math.min(98, Math.max(20, Math.round(activeAirport.defaultHumidity + variance * 2))));
-      }
-      setIsSyncing(false);
-    }, 600);
-  };
+  const [arrivalDate, setArrivalDate] = useState(() => {
+    const date = new Date(); date.setDate(date.getDate() + 1);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  });
+  const [arrivalHour, setArrivalHour] = useState("19:00");
 
   const handleSwapAirports = () => {
     const tempOrigin = originAirport;
@@ -97,20 +47,9 @@ export default function FlightInputs({
     onSelectDestination(tempOrigin);
   };
 
-  const commonAircraft = [
-    { code: "B77W", label: "B77W (Boeing 777-300ER)" },
-    { code: "A359", label: "A359 (Airbus A350-900)" },
-    { code: "B789", label: "B789 (Boeing 787-9 Dreamliner)" },
-    { code: "A321", label: "A321 (Airbus A321neo)" },
-    { code: "B738", label: "B738 (Boeing 737-800)" },
-    { code: "CRJ9", label: "CRJ9 (Bombardier CRJ-900)" },
-  ];
-
   const popularHubs = [
     "ATL", "JFK", "ORD", "LAX", "LHR", "CDG", "FRA", "DXB", "HND", "SIN", "ZRH", "DFW"
   ];
-
-  const displayTemp = tempUnit === "C" ? `${temp}°C` : `${Math.round((temp * 9) / 5 + 32)}°F`;
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-xl">
@@ -154,6 +93,7 @@ export default function FlightInputs({
                 }}
                 className="w-full px-3 py-2 text-sm font-semibold bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/30 text-slate-900"
               >
+                {!AIRPORTS.some(a => a.iata === originAirport.iata) && <option value={originAirport.iata}>{originAirport.city} ({originAirport.iata})</option>}
                 {AIRPORTS.map((a) => (
                   <option key={`origin-${a.iata}`} value={a.iata}>
                     {a.city} ({a.iata})
@@ -189,6 +129,7 @@ export default function FlightInputs({
                 }}
                 className="w-full px-3 py-2 text-sm font-semibold bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/30 text-slate-900"
               >
+                {!AIRPORTS.some(a => a.iata === destinationAirport.iata) && <option value={destinationAirport.iata}>{destinationAirport.city} ({destinationAirport.iata})</option>}
                 {AIRPORTS.map((a) => (
                   <option key={`dest-${a.iata}`} value={a.iata}>
                     {a.city} ({a.iata})
@@ -346,7 +287,7 @@ export default function FlightInputs({
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-sky-600" />
-              Date of Flight
+              Departure date
             </label>
             <input
               type="date"
@@ -356,11 +297,11 @@ export default function FlightInputs({
             />
           </div>
 
-          {/* Arrival Hour & Time */}
+          {/* Departure time (origin local) */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-sky-600" />
-              Arrival Hour & Time
+              Departure time (origin local)
             </label>
             <input
               type="time"
@@ -370,194 +311,18 @@ export default function FlightInputs({
             />
           </div>
 
-          {/* Aircraft Code */}
-          <div className="sm:col-span-2 space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Plane className="w-3.5 h-3.5 text-sky-600" />
-                Aircraft Code (IATA / ICAO)
-              </span>
-              <span className="text-[11px] text-slate-400 font-normal">
-                Standard equipment
-              </span>
-            </label>
-
-            <div className="flex gap-2">
-              <select
-                value={aircraftCode}
-                onChange={(e) => setAircraftCode(e.target.value)}
-                aria-label="Select Aircraft Code"
-                className="flex-1 px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 font-medium text-slate-900 transition-colors"
-              >
-                {commonAircraft.map((craft) => (
-                  <option key={craft.code} value={craft.code}>
-                    {craft.label}
-                  </option>
-                ))}
-              </select>
-
-              <input
-                type="text"
-                placeholder="Custom (e.g. A388)"
-                aria-label="Custom Aircraft Code"
-                value={aircraftCode}
-                onChange={(e) => setAircraftCode(e.target.value.toUpperCase())}
-                maxLength={4}
-                className="w-28 px-3 py-2.5 text-sm font-mono uppercase bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 text-center font-bold text-slate-900"
-              />
-            </div>
-          </div>
         </div>
+        <p className="mt-3 text-xs text-slate-600">Times are local to the departure airport. Map layovers are planning waypoints; analysis searches the direct origin–destination leg.</p>
       </div>
-
-      {/* Box 2: Weather & Meteorological Telemetry for Destination */}
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-sky-100 p-6 md:p-7 shadow-xl relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-sky-300">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600">
-              <CloudRain className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                Weather & Atmospheric Input
-              </h3>
-              <p className="text-xs text-slate-500">
-                Synchronized with meteorological forecast for {destinationAirport.iata}
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={simulateWeatherSync}
-            disabled={isSyncing}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-            title="Refresh weather data"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-sky-600" : ""}`} />
-            <span>{isSyncing ? "Syncing..." : "Sync"}</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
-          {/* Temperature */}
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-                <Thermometer className="w-3.5 h-3.5 text-rose-500" />
-                Temp
-              </span>
-              <button
-                onClick={() => setTempUnit(tempUnit === "C" ? "F" : "C")}
-                className="text-[10px] font-bold text-sky-700 hover:underline cursor-pointer"
-              >
-                °{tempUnit === "C" ? "F" : "C"}
-              </button>
-            </div>
-            <input
-              type="number"
-              value={temp}
-              onChange={(e) => setTemp(Number(e.target.value))}
-              className="text-lg font-bold text-slate-900 w-full bg-transparent focus:outline-none"
-            />
-            <span className="text-[10px] text-slate-400 block">{displayTemp}</span>
-          </div>
-
-          {/* Humidity */}
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1 mb-1">
-              <Droplets className="w-3.5 h-3.5 text-sky-500" />
-              Humidity
-            </span>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                value={humidity}
-                min={0}
-                max={100}
-                onChange={(e) => setHumidity(Number(e.target.value))}
-                className="text-lg font-bold text-slate-900 w-14 bg-transparent focus:outline-none"
-              />
-              <span className="text-sm font-semibold text-slate-500">%</span>
-            </div>
-            <span className="text-[10px] text-slate-400 block">Relative</span>
-          </div>
-
-          {/* Precipitation */}
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1 mb-1">
-              <CloudRain className="w-3.5 h-3.5 text-blue-500" />
-              Precip.
-            </span>
-            <input
-              type="text"
-              value={precipitation}
-              onChange={(e) => setPrecipitation(e.target.value)}
-              className="text-sm font-bold text-slate-900 w-full bg-transparent focus:outline-none truncate"
-            />
-            <span className="text-[10px] text-slate-400 block">Runway state</span>
-          </div>
-
-          {/* Wind Direction */}
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1 mb-1">
-              <Wind className="w-3.5 h-3.5 text-teal-500" />
-              Wind Dir
-            </span>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                value={windDir}
-                min={0}
-                max={360}
-                onChange={(e) => setWindDir(Number(e.target.value))}
-                className="text-lg font-bold text-slate-900 w-14 bg-transparent focus:outline-none"
-              />
-              <span className="text-sm font-semibold text-slate-500">°</span>
-            </div>
-            <span className="text-[10px] text-slate-400 block">Magnetic heading</span>
-          </div>
-
-          {/* Wind Speed */}
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1 mb-1">
-              <Wind className="w-3.5 h-3.5 text-indigo-500" />
-              Speed
-            </span>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                value={windSpeed}
-                min={0}
-                max={150}
-                onChange={(e) => setWindSpeed(Number(e.target.value))}
-                className="text-lg font-bold text-slate-900 w-14 bg-transparent focus:outline-none"
-              />
-              <span className="text-sm font-semibold text-slate-500">kts</span>
-            </div>
-            <span className="text-[10px] text-slate-400 block">Ground velocity</span>
-          </div>
-
-          {/* Pressure / QNH */}
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1 mb-1">
-              <Gauge className="w-3.5 h-3.5 text-amber-500" />
-              QNH Press.
-            </span>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                value={pressure}
-                min={900}
-                max={1080}
-                onChange={(e) => setPressure(Number(e.target.value))}
-                className="text-lg font-bold text-slate-900 w-14 bg-transparent focus:outline-none"
-              />
-              <span className="text-xs font-semibold text-slate-500">hPa</span>
-            </div>
-            <span className="text-[10px] text-slate-400 block">Barometric</span>
-          </div>
-        </div>
-      </div>
+      <ConciergePanel
+        onResult={onResult}
+        routeRequest={`From ${originAirport.iata} to ${destinationAirport.iata} on ${arrivalDate} at ${arrivalHour}`}
+        onResolved={result => {
+          const scheduled = result.selected_flight?.scheduled_departure;
+          if (scheduled) { setArrivalDate(scheduled.slice(0, 10)); setArrivalHour(scheduled.slice(11, 16)); }
+          onResolved(result);
+        }}
+      />
     </div>
   );
 }

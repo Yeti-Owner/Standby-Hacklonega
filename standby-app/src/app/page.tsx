@@ -1,31 +1,51 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import Image from "next/image";
 import Cloudscape from "@/components/ui/cloudscape";
 import { GlobeCdn, CdnMarker, CdnArc } from "@/components/ui/cobe-globe-cdn";
 import AirportSearch from "@/components/airport-search";
 import FlightInputs from "@/components/flight-inputs";
+import ConciergeResults from "@/components/concierge-results";
 import TeamSection from "@/components/team-section";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { PuffyCloudDividerTop, PuffyCloudDividerBottom } from "@/components/puffy-cloud-divider";
 import { Airport, AIRPORTS } from "@/lib/airports";
 import { ChevronDown } from "lucide-react";
+import type { AirportInfo, FlightResult } from "@/lib/concierge";
 
 export default function Home() {
+  const [analysisResult, setAnalysisResult] = useState<FlightResult | null>(null);
   // Flight Route State
-  const [selectedAirport, setSelectedAirport] = useState<Airport | null>(AIRPORTS[0]);
   const [originAirport, setOriginAirport] = useState<Airport>(AIRPORTS[0]); // ATL
   const [destinationAirport, setDestinationAirport] = useState<Airport>(
     () => AIRPORTS.find((a) => a.iata === "ZRH") || AIRPORTS[12] || AIRPORTS[1]
   );
-  const [layoverCount, setLayoverCount] = useState<0 | 1 | 2>(1);
+  const [layoverCount, setLayoverCount] = useState<0 | 1 | 2>(0);
   const [layoverAirport1, setLayoverAirport1] = useState<Airport>(
     () => AIRPORTS.find((a) => a.iata === "LHR") || AIRPORTS[4]
   );
   const [layoverAirport2, setLayoverAirport2] = useState<Airport | null>(
     () => AIRPORTS.find((a) => a.iata === "DXB") || AIRPORTS[6]
   );
+
+  function handleResolved(result: FlightResult) {
+    const flight = result.travel_context?.flight || result.selected_flight;
+    if (!flight) return;
+    function fromInfo(code: string, info?: AirportInfo): Airport | undefined {
+      const known = AIRPORTS.find(airport => airport.iata === code);
+      if (known) return known;
+      if (info?.lat == null || info.lon == null) return undefined;
+      return { iata: code, icao: info.icao || "", name: info.name || code, city: info.city || code,
+        country: info.country || "", coordinates: [info.lon, info.lat], elevationFt: 0, timezone: info.tz || "UTC",
+        defaultTemp: 0, defaultWindKts: 0, defaultWindDir: 0, defaultHumidity: 0, defaultPressure: 0 };
+    }
+    const origin = fromInfo(flight.origin_iata, flight.origin_airport);
+    const destination = fromInfo(flight.dest_iata, flight.destination_airport);
+    if (origin) setOriginAirport(origin);
+    if (destination) { setDestinationAirport(destination); }
+    setLayoverCount(0);
+  }
 
   const commandSectionRef = useRef<HTMLElement>(null);
   const creatorsSectionRef = useRef<HTMLDivElement>(null);
@@ -34,10 +54,10 @@ export default function Home() {
   const [windowWidth, setWindowWidth] = useState(1920);
 
   useEffect(() => {
-    setWindowWidth(window.innerWidth);
+    const initialResize = requestAnimationFrame(() => setWindowWidth(window.innerWidth));
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => { cancelAnimationFrame(initialResize); window.removeEventListener("resize", handleResize); };
   }, []);
 
   // Direct scroll tracking for Pinned Page 1 and Airplane Flyover
@@ -98,7 +118,6 @@ export default function Home() {
 
   // Automatically smooth scroll down to Part 2 on airport search selection
   const handleSelectAirport = (airport: Airport) => {
-    setSelectedAirport(airport);
     setDestinationAirport(airport);
     setTimeout(() => {
       commandSectionRef.current?.scrollIntoView({
@@ -294,6 +313,7 @@ export default function Home() {
             <div className="w-full">
               <AirportSearch
                 onSelectAirport={handleSelectAirport}
+                onVoiceRequest={scrollToCommand}
                 selectedAirport={destinationAirport}
               />
             </div>
@@ -320,7 +340,7 @@ export default function Home() {
             style={{ x: planeX, y: planeY, rotate: planeRotate, opacity: planeOpacity }}
             className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-30"
           >
-            <img
+            <Image unoptimized width={1600} height={900}
               src="/images/private-jet.webp"
               alt="Private jet flying across the screen"
               className="w-auto h-[50vh] sm:h-[62vh] md:h-[72vh] max-w-none filter drop-shadow-[0_35px_60px_rgba(15,23,42,0.38)] drop-shadow-[0_12px_24px_rgba(2,132,199,0.25)]"
@@ -366,7 +386,7 @@ export default function Home() {
                 <div className="w-full flex items-center justify-between pb-4 border-b border-slate-100 mb-3 text-xs">
                   <div className="flex items-center space-x-2 text-sky-700 font-mono">
                     <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping" />
-                    <span className="font-extrabold uppercase tracking-wider">Live Flight Telemetry</span>
+                    <span className="font-extrabold uppercase tracking-wider">Flight route overview</span>
                   </div>
                   <div className="text-slate-700 font-mono font-bold text-xs bg-sky-50 border border-sky-200/80 px-3 py-1 rounded-full">
                     {originAirport.iata} ➔ {destinationAirport.iata} {layoverCount > 0 ? `(${layoverCount} Stop${layoverCount > 1 ? "s" : ""})` : "(Non-stop)"}
@@ -390,7 +410,7 @@ export default function Home() {
                     <span className="text-slate-900 font-bold font-mono text-sm">{totalDistanceNmi.toLocaleString()} nmi</span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                    <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Est. Flight Time</span>
+                    <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Illustrative flight time</span>
                     <span className="text-slate-900 font-bold font-mono text-sm">{hoursStr}</span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
@@ -405,8 +425,10 @@ export default function Home() {
 
             {/* Right Column: Question Boxes (Flight Route & Weather) */}
             <div className="lg:col-span-6 flex justify-center">
+              <Suspense fallback={<p className="rounded-2xl bg-white/95 p-6 text-sky-900">Loading your flight controls…</p>}>
               <FlightInputs
-                selectedAirport={selectedAirport}
+                onResolved={handleResolved}
+                onResult={setAnalysisResult}
                 originAirport={originAirport}
                 onSelectOrigin={setOriginAirport}
                 destinationAirport={destinationAirport}
@@ -418,8 +440,10 @@ export default function Home() {
                 layoverAirport2={layoverAirport2}
                 onSelectLayover2={setLayoverAirport2}
               />
+              </Suspense>
             </div>
           </div>
+          {analysisResult && <div className="mt-8"><ConciergeResults result={analysisResult} /></div>}
         </div>
       </section>
     </motion.div>

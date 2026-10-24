@@ -2,69 +2,24 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Airport, AIRPORTS } from "@/lib/airports";
-import { Search, Plane, MapPin, X, Compass, ChevronRight, Mic, MicOff } from "lucide-react";
+import { Search, Plane, X, ChevronRight, Mic } from "lucide-react";
 
 interface AirportSearchProps {
   onSelectAirport: (airport: Airport) => void;
+  onVoiceRequest: () => void;
   selectedAirport: Airport | null;
 }
 
 export default function AirportSearch({
   onSelectAirport,
+  onVoiceRequest,
   selectedAirport,
 }: AirportSearchProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
-  const [isListening, setIsListening] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.lang = "en-US";
-
-        recognition.onstart = () => setIsListening(true);
-        recognition.onresult = (event: any) => {
-          const transcript = Array.from(event.results)
-            .map((result: any) => result[0].transcript)
-            .join("");
-          setQuery(transcript);
-          setIsOpen(true);
-        };
-        recognition.onerror = () => setIsListening(false);
-        recognition.onend = () => setIsListening(false);
-        recognitionRef.current = recognition;
-      }
-    }
-  }, []);
-
-  const handleVoiceSearch = () => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    } else {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.start();
-          setIsListening(true);
-        } catch {
-          recognitionRef.current.stop();
-          setTimeout(() => recognitionRef.current?.start(), 150);
-        }
-      } else {
-        inputRef.current?.focus();
-      }
-    }
-  };
-
   // Filter airports
   const filteredAirports = query.trim() === ""
     ? []
@@ -165,20 +120,12 @@ export default function AirportSearch({
 
             <button
               type="button"
-              onClick={handleVoiceSearch}
-              aria-label={isListening ? "Stop listening" : "Search by voice"}
-              title={isListening ? "Listening... click to stop" : "Search by voice"}
-              className={`p-2 rounded-xl transition-all duration-200 flex items-center justify-center cursor-pointer ${
-                isListening
-                  ? "text-rose-600 bg-rose-50 ring-2 ring-rose-400/40 animate-pulse"
-                  : "text-slate-400 hover:text-sky-600 hover:bg-sky-50 active:scale-95"
-              }`}
+              onClick={onVoiceRequest}
+              aria-label="Open local voice concierge"
+              title="Speak your trip with local Bark transcription"
+              className="p-2 rounded-xl transition-all duration-200 flex items-center justify-center cursor-pointer text-slate-400 hover:text-sky-600 hover:bg-sky-50 active:scale-95"
             >
-              {isListening ? (
-                <MicOff className="w-5 h-5 text-rose-600" />
-              ) : (
-                <Mic className="w-5 h-5" />
-              )}
+              <Mic className="w-5 h-5" />
             </button>
           </div>
         </div>

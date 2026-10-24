@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -25,10 +26,10 @@ const ScrollFlyIn = React.forwardRef<HTMLDivElement, ScrollFlyInProps>(
     const [screenWidth, setScreenWidth] = React.useState(1920);
 
     React.useEffect(() => {
-      setScreenWidth(window.innerWidth);
+      const initialResize = requestAnimationFrame(() => setScreenWidth(window.innerWidth));
       const handleResize = () => setScreenWidth(window.innerWidth);
       window.addEventListener("resize", handleResize);
-      return () => window.removeEventListener("resize", handleResize);
+      return () => { cancelAnimationFrame(initialResize); window.removeEventListener("resize", handleResize); };
     }, []);
 
     const { scrollYProgress } = useScroll({
@@ -58,7 +59,7 @@ const ScrollFlyIn = React.forwardRef<HTMLDivElement, ScrollFlyInProps>(
 
     return (
       <div
-        ref={targetRef}
+        ref={node => { targetRef.current = node; if (typeof ref === "function") ref(node); else if (ref) ref.current = node; }}
         className={cn(
           "relative w-full h-[60vh] sm:h-[70vh] md:h-[80vh] overflow-x-clip pointer-events-none z-30 flex items-center justify-center",
           className
@@ -76,7 +77,7 @@ const ScrollFlyIn = React.forwardRef<HTMLDivElement, ScrollFlyInProps>(
           style={{ x, y, rotate, opacity }}
           className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
         >
-          <img
+          <Image unoptimized width={1600} height={900}
             src={imageUrl}
             alt={imageAlt}
             className="w-auto h-[48vh] sm:h-[58vh] md:h-[68vh] max-w-none filter drop-shadow-[0_25px_45px_rgba(15,23,42,0.30)] drop-shadow-[0_8px_16px_rgba(2,132,199,0.20)]"
