@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Airport } from "@/lib/airports";
+import { Airport, AIRPORTS } from "@/lib/airports";
 import {
   Calendar,
   Clock,
@@ -12,20 +12,43 @@ import {
   Gauge,
   Droplets,
   RefreshCw,
-  CheckCircle2,
-  Info,
+  ArrowRight,
+  ArrowLeftRight,
+  MapPin,
+  Route,
 } from "lucide-react";
 
 interface FlightInputsProps {
   selectedAirport: Airport | null;
+  originAirport: Airport;
+  onSelectOrigin: (airport: Airport) => void;
+  destinationAirport: Airport;
+  onSelectDestination: (airport: Airport) => void;
+  layoverCount: 0 | 1 | 2;
+  onChangeLayoverCount: (count: 0 | 1 | 2) => void;
+  layoverAirport1: Airport;
+  onSelectLayover1: (airport: Airport) => void;
+  layoverAirport2: Airport | null;
+  onSelectLayover2: (airport: Airport | null) => void;
 }
 
-export default function FlightInputs({ selectedAirport }: FlightInputsProps) {
+export default function FlightInputs({
+  selectedAirport,
+  originAirport,
+  onSelectOrigin,
+  destinationAirport,
+  onSelectDestination,
+  layoverCount,
+  onChangeLayoverCount,
+  layoverAirport1,
+  onSelectLayover1,
+  layoverAirport2,
+  onSelectLayover2,
+}: FlightInputsProps) {
   // Flight Arrival Telemetry State
   const [arrivalDate, setArrivalDate] = useState("2026-10-25");
   const [arrivalHour, setArrivalHour] = useState("14:30");
   const [aircraftCode, setAircraftCode] = useState("B77W");
-  const [standbyPriority, setStandbyPriority] = useState("Priority Alpha");
 
   useEffect(() => {
     const today = new Date();
@@ -34,41 +57,44 @@ export default function FlightInputs({ selectedAirport }: FlightInputsProps) {
   }, []);
 
   // Weather Telemetry State (Pre-filled with airport defaults, fully editable, ready for API sync)
-  const [temp, setTemp] = useState(selectedAirport ? selectedAirport.defaultTemp : 20);
+  const activeAirport = destinationAirport || selectedAirport;
+  const [temp, setTemp] = useState(activeAirport ? activeAirport.defaultTemp : 20);
   const [tempUnit, setTempUnit] = useState<"C" | "F">("C");
-  const [humidity, setHumidity] = useState(selectedAirport ? selectedAirport.defaultHumidity : 60);
+  const [humidity, setHumidity] = useState(activeAirport ? activeAirport.defaultHumidity : 60);
   const [precipitation, setPrecipitation] = useState("0.0 mm (Nil)");
-  const [windDir, setWindDir] = useState(selectedAirport ? selectedAirport.defaultWindDir : 280);
-  const [windSpeed, setWindSpeed] = useState(selectedAirport ? selectedAirport.defaultWindKts : 10);
-  const [pressure, setPressure] = useState(selectedAirport ? selectedAirport.defaultPressure : 1013);
+  const [windDir, setWindDir] = useState(activeAirport ? activeAirport.defaultWindDir : 280);
+  const [windSpeed, setWindSpeed] = useState(activeAirport ? activeAirport.defaultWindKts : 10);
+  const [pressure, setPressure] = useState(activeAirport ? activeAirport.defaultPressure : 1013);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<string>("Cached METAR");
 
-  // Update weather whenever selected airport changes
+  // Update weather whenever selected destination airport changes
   useEffect(() => {
-    if (selectedAirport) {
-      setTemp(selectedAirport.defaultTemp);
-      setHumidity(selectedAirport.defaultHumidity);
-      setWindDir(selectedAirport.defaultWindDir);
-      setWindSpeed(selectedAirport.defaultWindKts);
-      setPressure(selectedAirport.defaultPressure);
-      setLastSyncTime("Synced for " + selectedAirport.iata);
+    if (activeAirport) {
+      setTemp(activeAirport.defaultTemp);
+      setHumidity(activeAirport.defaultHumidity);
+      setWindDir(activeAirport.defaultWindDir);
+      setWindSpeed(activeAirport.defaultWindKts);
+      setPressure(activeAirport.defaultPressure);
     }
-  }, [selectedAirport]);
+  }, [activeAirport]);
 
   const simulateWeatherSync = () => {
     setIsSyncing(true);
     setTimeout(() => {
-      if (selectedAirport) {
-        // Subtle realistic variance
+      if (activeAirport) {
         const variance = (Math.random() - 0.5) * 3;
-        setTemp(Math.round(selectedAirport.defaultTemp + variance));
-        setWindSpeed(Math.max(2, Math.round(selectedAirport.defaultWindKts + variance)));
-        setHumidity(Math.min(98, Math.max(20, Math.round(selectedAirport.defaultHumidity + variance * 2))));
+        setTemp(Math.round(activeAirport.defaultTemp + variance));
+        setWindSpeed(Math.max(2, Math.round(activeAirport.defaultWindKts + variance)));
+        setHumidity(Math.min(98, Math.max(20, Math.round(activeAirport.defaultHumidity + variance * 2))));
       }
-      setLastSyncTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
       setIsSyncing(false);
     }, 600);
+  };
+
+  const handleSwapAirports = () => {
+    const tempOrigin = originAirport;
+    onSelectOrigin(destinationAirport);
+    onSelectDestination(tempOrigin);
   };
 
   const commonAircraft = [
@@ -80,59 +106,247 @@ export default function FlightInputs({ selectedAirport }: FlightInputsProps) {
     { code: "CRJ9", label: "CRJ9 (Bombardier CRJ-900)" },
   ];
 
+  const popularHubs = [
+    "ATL", "JFK", "ORD", "LAX", "LHR", "CDG", "FRA", "DXB", "HND", "SIN", "ZRH", "DFW"
+  ];
+
   const displayTemp = tempUnit === "C" ? `${temp}°C` : `${Math.round((temp * 9) / 5 + 32)}°F`;
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-xl">
-      {/* Box 1: Flight Arrival Parameters */}
+      {/* Box 1: Flight Route & Schedule */}
       <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-sky-100 p-6 md:p-7 shadow-xl relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-sky-300">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 rounded-xl bg-sky-50 text-sky-700">
-              <Plane className="w-5 h-5" />
+              <Route className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                Flight Schedule & Arrival
+                Flight Route & Schedule
               </h3>
               <p className="text-xs text-slate-500">
-                Destination waypoint & operational schedule
+                Origin, destination, and layover waypoint parameters
               </p>
             </div>
           </div>
 
-          {selectedAirport && (
-            <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold tracking-wider font-mono">
-              {selectedAirport.iata}
-            </span>
-          )}
+          <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold tracking-wider font-mono">
+            {originAirport.iata} ➔ {destinationAirport.iata}
+          </span>
         </div>
 
-        {/* Airport Status Banner */}
-        <div className="mb-5 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Arrival Station
+        {/* Origin (From) & Destination (To) Selector */}
+        <div className="mb-5 p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr,auto,1fr] gap-3 items-center">
+            {/* Origin (Where flight is from) */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-sky-600" />
+                Flight From (Origin)
+              </label>
+              <select
+                aria-label="Select Departure Airport"
+                value={originAirport.iata}
+                onChange={(e) => {
+                  const found = AIRPORTS.find((a) => a.iata === e.target.value);
+                  if (found) onSelectOrigin(found);
+                }}
+                className="w-full px-3 py-2 text-sm font-semibold bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/30 text-slate-900"
+              >
+                {AIRPORTS.map((a) => (
+                  <option key={`origin-${a.iata}`} value={a.iata}>
+                    {a.city} ({a.iata})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Swap Button */}
+            <div className="flex justify-center pt-3 sm:pt-4">
+              <button
+                type="button"
+                onClick={handleSwapAirports}
+                className="p-2 rounded-full bg-white hover:bg-sky-50 border border-slate-200 text-slate-600 hover:text-sky-600 transition-colors cursor-pointer shadow-xs"
+                title="Swap Origin and Destination"
+              >
+                <ArrowLeftRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Destination (Where it has to go) */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                <Plane className="w-3 h-3 text-amber-500" />
+                Flight To (Destination)
+              </label>
+              <select
+                aria-label="Select Destination Airport"
+                value={destinationAirport.iata}
+                onChange={(e) => {
+                  const found = AIRPORTS.find((a) => a.iata === e.target.value);
+                  if (found) onSelectDestination(found);
+                }}
+                className="w-full px-3 py-2 text-sm font-semibold bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/30 text-slate-900"
+              >
+                {AIRPORTS.map((a) => (
+                  <option key={`dest-${a.iata}`} value={a.iata}>
+                    {a.city} ({a.iata})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Layover Count Selector */}
+          <div className="pt-2 border-t border-slate-200/80">
+            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-2">
+              Layovers & Stops
             </span>
-            <span className="text-sm font-bold text-slate-900">
-              {selectedAirport
-                ? `${selectedAirport.name} (${selectedAirport.iata})`
-                : "No airport selected — using Hartsfield-Jackson (ATL)"}
-            </span>
-            {selectedAirport && (
-              <span className="text-xs text-slate-500 block">
-                {selectedAirport.city}, {selectedAirport.country} • Elev. {selectedAirport.elevationFt} ft
-              </span>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => onChangeLayoverCount(0)}
+                className={`py-1.5 px-2 text-xs font-bold rounded-lg border transition-all cursor-pointer text-center ${
+                  layoverCount === 0
+                    ? "bg-sky-600 text-white border-sky-600 shadow-xs"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                Direct (0 Stops)
+              </button>
+              <button
+                type="button"
+                onClick={() => onChangeLayoverCount(1)}
+                className={`py-1.5 px-2 text-xs font-bold rounded-lg border transition-all cursor-pointer text-center ${
+                  layoverCount === 1
+                    ? "bg-sky-600 text-white border-sky-600 shadow-xs"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                1 Layover
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onChangeLayoverCount(2);
+                  if (!layoverAirport2) {
+                    const fallback = AIRPORTS.find((a) => a.iata === "DXB") || AIRPORTS[6];
+                    onSelectLayover2(fallback);
+                  }
+                }}
+                className={`py-1.5 px-2 text-xs font-bold rounded-lg border transition-all cursor-pointer text-center ${
+                  layoverCount === 2
+                    ? "bg-sky-600 text-white border-sky-600 shadow-xs"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                2 Layovers
+              </button>
+            </div>
+
+            {/* Layover 1 Selection */}
+            {layoverCount >= 1 && (
+              <div className="mt-3 p-3 bg-white rounded-lg border border-slate-200/90 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    Layover Station 1:
+                  </label>
+                  <span className="text-[11px] font-mono font-bold text-sky-800">
+                    {layoverAirport1.name} ({layoverAirport1.iata})
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {popularHubs.slice(3, 11).map((hubIata) => (
+                    <button
+                      key={`hub-1-${hubIata}`}
+                      type="button"
+                      onClick={() => {
+                        const airport = AIRPORTS.find((a) => a.iata === hubIata);
+                        if (airport) onSelectLayover1(airport);
+                      }}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                        layoverAirport1.iata === hubIata
+                          ? "bg-amber-500 text-white font-bold"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }`}
+                    >
+                      {hubIata}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
+
+            {/* Layover 2 Selection */}
+            {layoverCount === 2 && (
+              <div className="mt-2.5 p-3 bg-white rounded-lg border border-slate-200/90 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                    Layover Station 2:
+                  </label>
+                  <span className="text-[11px] font-mono font-bold text-sky-800">
+                    {layoverAirport2 ? `${layoverAirport2.name} (${layoverAirport2.iata})` : "Select Hub"}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {popularHubs.slice(5, 12).map((hubIata) => (
+                    <button
+                      key={`hub-2-${hubIata}`}
+                      type="button"
+                      onClick={() => {
+                        const airport = AIRPORTS.find((a) => a.iata === hubIata);
+                        if (airport) onSelectLayover2(airport);
+                      }}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                        layoverAirport2?.iata === hubIata
+                          ? "bg-indigo-600 text-white font-bold"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }`}
+                    >
+                      {hubIata}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Live Route Breadcrumb Banner */}
+            <div className="mt-3 px-3 py-2 bg-sky-50/80 rounded-lg border border-sky-200/70 flex items-center justify-between text-xs">
+              <span className="font-bold text-sky-950 flex items-center gap-1.5">
+                <Plane className="w-3.5 h-3.5 text-sky-600" />
+                Active Route:
+              </span>
+              <div className="font-mono font-bold text-sky-900 flex items-center gap-1">
+                <span>{originAirport.iata}</span>
+                <ArrowRight className="w-3 h-3 text-sky-400" />
+                {layoverCount >= 1 && (
+                  <>
+                    <span className="text-amber-700">{layoverAirport1.iata}</span>
+                    <ArrowRight className="w-3 h-3 text-sky-400" />
+                  </>
+                )}
+                {layoverCount === 2 && layoverAirport2 && (
+                  <>
+                    <span className="text-indigo-700">{layoverAirport2.iata}</span>
+                    <ArrowRight className="w-3 h-3 text-sky-400" />
+                  </>
+                )}
+                <span>{destinationAirport.iata}</span>
+              </div>
+            </div>
           </div>
         </div>
 
+        {/* Schedule Inputs: Date, Time, Aircraft */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Date of Arrival */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-sky-600" />
-              Date of Arrival
+              Date of Flight
             </label>
             <input
               type="date"
@@ -184,7 +398,7 @@ export default function FlightInputs({ selectedAirport }: FlightInputsProps) {
 
               <input
                 type="text"
-                placeholder="Or custom (e.g. A388)"
+                placeholder="Custom (e.g. A388)"
                 aria-label="Custom Aircraft Code"
                 value={aircraftCode}
                 onChange={(e) => setAircraftCode(e.target.value.toUpperCase())}
@@ -196,7 +410,7 @@ export default function FlightInputs({ selectedAirport }: FlightInputsProps) {
         </div>
       </div>
 
-      {/* Box 2: Weather & Meteorological Telemetry */}
+      {/* Box 2: Weather & Meteorological Telemetry for Destination */}
       <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-sky-100 p-6 md:p-7 shadow-xl relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-sky-300">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
           <div className="flex items-center space-x-3">
@@ -208,7 +422,7 @@ export default function FlightInputs({ selectedAirport }: FlightInputsProps) {
                 Weather & Atmospheric Input
               </h3>
               <p className="text-xs text-slate-500">
-                Synchronized with meteorological forecast engine
+                Synchronized with meteorological forecast for {destinationAirport.iata}
               </p>
             </div>
           </div>
