@@ -7,6 +7,7 @@ import { GlobeCdn, CdnMarker, CdnArc } from "@/components/ui/cobe-globe-cdn";
 import AirportSearch from "@/components/airport-search";
 import FlightInputs from "@/components/flight-inputs";
 import TeamSection from "@/components/team-section";
+import { ScrollFlyIn } from "@/components/ui/hero-section-3";
 import { PuffyCloudDividerTop, PuffyCloudDividerBottom } from "@/components/puffy-cloud-divider";
 import { Airport, AIRPORTS } from "@/lib/airports";
 import { ChevronDown } from "lucide-react";
@@ -239,6 +240,15 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ========================================================================= */}
+      {/* SEAMLESS AIRPLANE TRANSITION OVERLAY (PAGE 1 TO PAGE 2)                   */}
+      {/* ========================================================================= */}
+      <ScrollFlyIn
+        imageUrl="/images/private-jet.webp"
+        imageAlt="Private jet flying across the screen"
+        className="relative z-30"
+      />
 
       {/* Puffy Cloud Divider 1 (Transition to Section 2) */}
       <PuffyCloudDividerTop fill="rgba(255, 255, 255, 0.7)" className="-mb-1 z-20 relative" />
