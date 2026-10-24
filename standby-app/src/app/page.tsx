@@ -50,42 +50,34 @@ export default function Home() {
         {/* Floating Header Navigation */}
         <header className="sticky top-0 z-50 px-4 sm:px-8 py-3.5 backdrop-blur-md bg-white/70 border-b border-sky-100/80 transition-all duration-300">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="relative w-9 h-9 rounded-xl overflow-hidden shadow-xs border border-sky-200/80 bg-white p-1">
+          <div className="flex items-center cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div className="relative h-11 w-40 sm:w-48 flex items-center">
               <Image
-                src="/images/standby-logo.png"
-                alt="Standby Logo"
+                src="/images/standby-new-logo.png"
+                alt="Standby"
                 fill
-                className="object-contain"
+                className="object-contain object-left group-hover:scale-105 transition-transform duration-300"
                 priority
               />
             </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tight text-sky-950 leading-none">
-                Standby
-              </span>
-              <span className="text-[10px] font-bold tracking-widest text-sky-600 uppercase font-mono">
-                Aviation OS
-              </span>
-            </div>
           </div>
 
-          <nav className="flex items-center space-x-2 sm:space-x-4 text-xs font-semibold">
+          <nav className="flex items-center space-x-2 sm:space-x-4 text-sm font-medium">
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="px-3 py-1.5 text-slate-700 hover:text-sky-700 rounded-lg hover:bg-sky-50/80 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 text-slate-700 hover:text-sky-800 rounded-lg hover:bg-white/60 transition-colors cursor-pointer text-base"
             >
               Search
             </button>
             <button
               onClick={scrollToCommand}
-              className="px-3 py-1.5 text-slate-700 hover:text-sky-700 rounded-lg hover:bg-sky-50/80 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 text-slate-700 hover:text-sky-800 rounded-lg hover:bg-white/60 transition-colors cursor-pointer text-base"
             >
               Flight & Weather
             </button>
             <button
               onClick={() => creatorsSectionRef.current?.scrollIntoView({ behavior: "smooth" })}
-              className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
+              className="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer text-base"
             >
               Creators
             </button>
@@ -96,12 +88,18 @@ export default function Home() {
       {/* ========================================================================= */}
       {/* PART 1: LANDING PAGE HERO                                                */}
       {/* ========================================================================= */}
-      <section className="relative min-h-[85vh] flex flex-col items-center justify-center px-4 sm:px-6 pt-8 pb-16 text-center z-10">
+      <section className="relative min-h-[85vh] flex flex-col items-center justify-center px-4 sm:px-6 pt-4 pb-16 text-center z-10">
         <div className="max-w-4xl mx-auto flex flex-col items-center w-full">
-          {/* Main Headline */}
-          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-slate-950 tracking-tight leading-[1.06] mb-8 drop-shadow-xs">
-            Where are you going next?
-          </h1>
+          {/* Prominently Sized Standby Logo Centered Beautifully Above Search Bar */}
+          <div className="relative w-80 sm:w-[440px] md:w-[560px] lg:w-[640px] h-36 sm:h-48 md:h-60 mb-6 flex items-center justify-center animate-float-gentle">
+            <Image
+              src="/images/standby-new-logo.png"
+              alt="Standby"
+              fill
+              className="object-contain drop-shadow-sm select-none"
+              priority
+            />
+          </div>
 
           {/* Main Airport Search Engine Component */}
           <div className="w-full">
