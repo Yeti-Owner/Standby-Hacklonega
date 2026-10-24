@@ -34,23 +34,21 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen text-slate-900 overflow-x-hidden selection:bg-sky-500 selection:text-white">
-      {/* 1. Global Animated Cloudscape Motion Background */}
-      <div className="fixed inset-0 w-full h-full -z-20 pointer-events-none">
+      {/* 1. Global Animated Cloudscape Motion Picture Background */}
+      <div className="fixed inset-0 w-full h-full z-0 pointer-events-none">
         <Cloudscape
-          speed={1.0}
-          colorBottom="#38bdf8"
-          colorMid="#e0f2fe"
+          speed={1}
+          colorBottom="#87ceeb"
+          colorMid="#f8f8f8"
           colorTop="#ffffff"
-          height="100vh"
-          className="w-full h-full"
+          height="100%"
+          className="w-full h-full bg-transparent"
         />
       </div>
 
-      {/* Subtle atmospheric vignette */}
-      <div className="fixed inset-0 bg-gradient-to-b from-sky-200/20 via-transparent to-sky-950/20 pointer-events-none -z-10" />
-
-      {/* Floating Header Navigation */}
-      <header className="sticky top-0 z-50 px-4 sm:px-8 py-3.5 backdrop-blur-md bg-white/70 border-b border-sky-100/80 transition-all duration-300">
+      <div className="relative z-10">
+        {/* Floating Header Navigation */}
+        <header className="sticky top-0 z-50 px-4 sm:px-8 py-3.5 backdrop-blur-md bg-white/70 border-b border-sky-100/80 transition-all duration-300">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <div className="relative w-9 h-9 rounded-xl overflow-hidden shadow-xs border border-sky-200/80 bg-white p-1">
@@ -176,27 +174,28 @@ export default function Home() {
       </section>
 
       {/* Puffy Cloud Divider 1 (Transition to Section 2) */}
-      <PuffyCloudDividerTop fill="#f8fafc" className="-mb-1 z-20 relative" />
+      <PuffyCloudDividerTop fill="rgba(255, 255, 255, 0.7)" className="-mb-1 z-20 relative" />
 
+      {/* ========================================================================= */}
       {/* ========================================================================= */}
       {/* PART 2: COMMAND CENTER (ROTATING GLOBE + FLIGHT & WEATHER INPUTS)         */}
       {/* ========================================================================= */}
       <section
         id="command-center"
         ref={commandSectionRef}
-        className="relative z-20 bg-slate-50/95 backdrop-blur-xl py-16 px-4 sm:px-6 lg:px-8 border-y border-slate-200/60"
+        className="relative z-20 bg-white/40 backdrop-blur-md py-16 px-4 sm:px-6 lg:px-8 border-y border-white/40"
       >
         <div className="max-w-7xl mx-auto">
           {/* Section Heading */}
           <div className="text-center max-w-3xl mx-auto mb-12">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold tracking-wider uppercase mb-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/80 border border-sky-200/80 text-sky-900 text-xs font-bold tracking-wider uppercase mb-3 shadow-xs">
               <Globe2 className="w-3.5 h-3.5 text-sky-600" />
               Live Flight & Meteorological Telemetry
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-950 tracking-tight">
               Global Arrival Station Command
             </h2>
-            <p className="mt-3 text-slate-600 text-base sm:text-lg font-medium">
+            <p className="mt-3 text-slate-800 text-base sm:text-lg font-semibold">
               Interact with the live 3D dotted earth visualization on the left, and adjust flight arrival parameters with synchronized weather forecast telemetry on the right.
             </p>
           </div>
@@ -205,7 +204,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
             {/* Left Column: Rotating Dotted Globe */}
             <div className="lg:col-span-6 flex flex-col items-center">
-              <div className="w-full bg-slate-950 rounded-3xl p-4 sm:p-6 shadow-2xl border border-sky-500/20 relative overflow-hidden">
+              <div className="w-full bg-slate-950/90 backdrop-blur-xl rounded-3xl p-4 sm:p-6 shadow-2xl border border-sky-400/30 relative overflow-hidden">
                 {/* Globe Header Telemetry */}
                 <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4 text-xs">
                   <div className="flex items-center space-x-2 text-sky-400 font-mono">
@@ -257,13 +256,14 @@ export default function Home() {
       </section>
 
       {/* Puffy Cloud Divider 2 (Transition to Section 3) */}
-      <PuffyCloudDividerBottom fill="#f8fafc" className="z-20 relative" />
+      <PuffyCloudDividerBottom fill="rgba(255, 255, 255, 0.7)" className="z-20 relative" />
 
       {/* ========================================================================= */}
       {/* PART 3: CREATED BY (MEET THE CREATORS)                                   */}
       {/* ========================================================================= */}
       <div ref={creatorsSectionRef}>
         <TeamSection />
+      </div>
       </div>
     </div>
   );
