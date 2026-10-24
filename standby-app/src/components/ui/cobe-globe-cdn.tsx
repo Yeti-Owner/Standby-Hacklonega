@@ -31,6 +31,9 @@ export function GlobeCdn({ markers = defaults, arcs = defaultArcs, className = "
   const camera = useRef({ phi: 0, theta: 0.2 })
   const zoomRef = useRef(1)
   const spinRef = useRef(true)
+  const manuallyPaused = useRef(false)
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const resumeAfterInteraction = useRef<() => void>(() => {})
   const speedRef = useRef(speed)
   const invalidate = useRef<() => void>(() => {})
   const targetZoom = useRef(1)
@@ -66,6 +69,8 @@ export function GlobeCdn({ markers = defaults, arcs = defaultArcs, className = "
   }, [])
   const toggleSpin = useCallback(() => {
     spinRef.current = !spinRef.current
+    manuallyPaused.current = !spinRef.current
+    if (resumeTimer.current) clearTimeout(resumeTimer.current)
     invalidate.current()
   }, [])
   const reset = useCallback(() => {
@@ -86,6 +91,18 @@ export function GlobeCdn({ markers = defaults, arcs = defaultArcs, className = "
     const pointers = new Map<number, { x: number; y: number }>()
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
     let pinchDistance = 0
+    function queueResume() {
+      if (resumeTimer.current) clearTimeout(resumeTimer.current)
+      resumeTimer.current = setTimeout(() => {
+        resumeTimer.current = null
+        if (!disposed && !pointers.size && !reducedMotion.matches && !manuallyPaused.current) {
+          spinRef.current = true
+          lastDraw = 0
+          schedule()
+        }
+      }, 2000)
+    }
+    resumeAfterInteraction.current = queueResume
     function schedule() {
       dirty = true
       if (!disposed && visible && !document.hidden && !frame) frame = requestAnimationFrame(draw)
@@ -175,6 +192,7 @@ export function GlobeCdn({ markers = defaults, arcs = defaultArcs, className = "
     function down(event: PointerEvent) {
       if (event.pointerType === "mouse" && event.button !== 0) return
       spinRef.current = false
+      if (resumeTimer.current) clearTimeout(resumeTimer.current)
       canvas!.focus({ preventScroll: true })
       canvas!.setPointerCapture(event.pointerId)
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
@@ -197,13 +215,15 @@ export function GlobeCdn({ markers = defaults, arcs = defaultArcs, className = "
     }
     function up(event: PointerEvent) {
       pointers.delete(event.pointerId); pinchDistance = distance()
-      if (!pointers.size) canvas!.style.cursor = "grab"
+      if (!pointers.size) { canvas!.style.cursor = "grab"; queueResume() }
       schedule()
     }
     function wheel(event: WheelEvent) {
       // Wheel events are captured only over the globe; the rest of the page
       // scrolls normally. Browser/trackpad pinch arrives through the same path.
       event.preventDefault()
+      spinRef.current = false
+      queueResume()
       const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? width : 1)
       changeZoom(targetZoom.current * Math.exp(-clamp(pixels, -120, 120) * .004))
     }
@@ -240,7 +260,10 @@ export function GlobeCdn({ markers = defaults, arcs = defaultArcs, className = "
     const initialMotionPreference = requestAnimationFrame(onMotionPreference)
     // Initial drawing is deferred until ResizeObserver reports a usable size.
     return () => {
-      disposed = true; cancelAnimationFrame(frame); cancelAnimationFrame(initialMotionPreference); invalidate.current = () => {}
+      disposed = true
+      if (resumeTimer.current) clearTimeout(resumeTimer.current)
+      resumeAfterInteraction.current = () => {}
+      cancelAnimationFrame(frame); cancelAnimationFrame(initialMotionPreference); invalidate.current = () => {}
       resizeObserver.disconnect(); intersection.disconnect()
       canvas.removeEventListener("pointerdown", down); canvas.removeEventListener("pointermove", move)
       canvas.removeEventListener("pointerup", up); canvas.removeEventListener("pointercancel", up)
@@ -261,7 +284,7 @@ export function GlobeCdn({ markers = defaults, arcs = defaultArcs, className = "
           const code = marker.region.match(/\b[A-Z]{3}\b/g)?.at(-1) || marker.region
           return <button type="button" key={marker.id} ref={node => { if (node) labelNodes.current.set(marker.id, node); else labelNodes.current.delete(marker.id) }}
             data-globe-label={code} aria-label={`Center globe on ${code}`} title={marker.region}
-            onClick={() => { camera.current = { phi: -(marker.location[1] * Math.PI / 180) - Math.PI / 2, theta: clamp(marker.location[0] * Math.PI / 180, -1.35, 1.35) }; spinRef.current = false; labelSlots.current.clear(); invalidate.current() }}
+            onClick={() => { camera.current = { phi: -(marker.location[1] * Math.PI / 180) - Math.PI / 2, theta: clamp(marker.location[0] * Math.PI / 180, -1.35, 1.35) }; spinRef.current = false; labelSlots.current.clear(); invalidate.current(); resumeAfterInteraction.current() }}
             className="pointer-events-auto absolute left-0 top-0 inline-flex items-center justify-center gap-1 rounded-md border border-slate-200 bg-white/95 font-mono text-[11px] font-bold text-slate-900 shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
             style={{ width: LABEL_WIDTH, height: LABEL_HEIGHT, visibility: "hidden", willChange: "transform" }}>
             <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: colorCss(index) }} />{code}
