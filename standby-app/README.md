@@ -5,12 +5,14 @@ From the repository root, run **start.bat** (or `start.bat --dev`). The root REA
 describes configuration, debug fixtures, voice review and offline tests.
 
 The frontend proxies `/api/concierge/*` to the Python loopback server. No provider
-keys belong here or in `NEXT_PUBLIC_*`. `concierge-panel.tsx` handles microphone,
-upload, review and streamed analysis; `concierge-results.tsx` renders the complete
-backend result in the existing design. `debug-demo-button.tsx` is intentionally
-isolated for easy removal. The route controls, globe, hero and creator section keep
-Tomas's visual language; simulated weather/flight telemetry has been replaced by
-actual results or explicitly labeled planning illustrations.
+keys belong here or in `NEXT_PUBLIC_*`. Tomas's unified `flight-search-bar.tsx`
+handles typed requests, microphone input, uploads, transcript review, and streamed
+analysis. Callum's missing-letter JFK suggestion is included in that review.
+`concierge-results.tsx` uses Tomas's results layout with Callum's terminal and
+gate maps in `airport-map-card.tsx`. The improved globe retains collision-aware
+labels and its interactive camera within Tomas's page layout.
+`debug-demo-button.tsx` remains isolated for easy removal. `concierge-panel.tsx`
+is retained for the older `flight-inputs.tsx` entry point.
 
 `npm run lint` and `npm run build` run the frontend checks.
 

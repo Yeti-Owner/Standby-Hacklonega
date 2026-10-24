@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect, Suspense, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Cloudscape from "@/components/ui/cloudscape";
 import { GlobeCdn, CdnMarker, CdnArc } from "@/components/ui/cobe-globe-cdn";
-import AirportSearch from "@/components/airport-search";
-import FlightInputs from "@/components/flight-inputs";
+import FlightSearchBar from "@/components/flight-search-bar";
 import ConciergeResults from "@/components/concierge-results";
 import TeamSection from "@/components/team-section";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -22,10 +21,10 @@ export default function Home() {
     () => AIRPORTS.find((a) => a.iata === "ZRH") || AIRPORTS[12] || AIRPORTS[1]
   );
   const [layoverCount, setLayoverCount] = useState<0 | 1 | 2>(0);
-  const [layoverAirport1, setLayoverAirport1] = useState<Airport>(
+  const [layoverAirport1] = useState<Airport>(
     () => AIRPORTS.find((a) => a.iata === "LHR") || AIRPORTS[4]
   );
-  const [layoverAirport2, setLayoverAirport2] = useState<Airport | null>(
+  const [layoverAirport2] = useState<Airport | null>(
     () => AIRPORTS.find((a) => a.iata === "DXB") || AIRPORTS[6]
   );
 
@@ -302,8 +301,8 @@ export default function Home() {
             }}
             className="w-full max-w-4xl mx-auto flex flex-col items-center text-center relative z-10 pointer-events-auto"
           >
-            {/* Prominent Large Standby Logo Directly Above Search Bar */}
-            <div className="relative w-full max-w-[1100px] h-[340px] sm:h-[420px] md:h-[480px] -mb-4 sm:-mb-6 md:-mb-8 animate-fade-in pointer-events-none select-none">
+            {/* Standby Logo Directly Above Search Bar */}
+            <div className="relative w-full max-w-md sm:max-w-xl md:max-w-2xl h-44 sm:h-56 md:h-64 mb-3 sm:mb-5 animate-fade-in pointer-events-none select-none">
               <Image
                 src="/images/standby-new-logo.png"
                 alt="Standby"
@@ -313,12 +312,16 @@ export default function Home() {
               />
             </div>
 
-            {/* Main Airport Search Engine Component */}
+            {/* Unified Flight Search Engine & Concierge Component */}
             <div className="w-full">
-              <AirportSearch
+              <FlightSearchBar
                 onSelectAirport={handleSelectAirport}
-                onVoiceRequest={scrollToCommand}
                 selectedAirport={destinationAirport}
+                originAirport={originAirport}
+                destinationAirport={destinationAirport}
+                onResult={setAnalysisResult}
+                onResolved={handleResolved}
+                onAnalyzeStart={scrollToCommand}
               />
             </div>
 
@@ -381,24 +384,24 @@ export default function Home() {
             </h2>
           </div>
 
-          {/* Split Screen Layout: Left = Cobe Globe with Lines, Right = Route & Weather Inputs */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-            {/* Left Column: Cobe Globe with Dynamic Flight Lines */}
-            <div className="lg:col-span-6 flex flex-col items-center">
-              <div className="w-full bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-7 shadow-xl border border-sky-100 relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-sky-300 flex flex-col items-center">
+          {/* Two-Column Layout: Left Globe Telemetry (Sticky on desktop), Right Flight Data */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* LEFT COLUMN: 3D Globe Card (Sticky on desktop) */}
+            <div className="lg:col-span-5 lg:sticky lg:top-24 flex flex-col items-center">
+              <div className="w-full bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xl border border-sky-100 relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:border-sky-300 flex flex-col items-center">
                 {/* Globe Header Telemetry */}
-                <div className="w-full flex items-center justify-between pb-4 border-b border-slate-100 mb-3 text-xs">
+                <div className="w-full flex items-center justify-between pb-3.5 border-b border-slate-100 mb-3 text-xs">
                   <div className="flex items-center space-x-2 text-sky-700 font-mono">
                     <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping" />
-                    <span className="font-extrabold uppercase tracking-wider">Flight route overview</span>
+                    <span className="font-extrabold uppercase tracking-wider text-[11px]">Flight route overview</span>
                   </div>
-                  <div className="text-slate-700 font-mono font-bold text-xs bg-sky-50 border border-sky-200/80 px-3 py-1 rounded-full">
+                  <div className="text-slate-700 font-mono font-bold text-xs bg-sky-50 border border-sky-200/80 px-2.5 py-0.5 rounded-full">
                     {originAirport.iata} ➔ {destinationAirport.iata} {layoverCount > 0 ? `(${layoverCount} Stop${layoverCount > 1 ? "s" : ""})` : "(Non-stop)"}
                   </div>
                 </div>
 
                 {/* Cobe 3D Globe with Arcs & Markers */}
-                <div className="w-full max-w-[480px] mx-auto">
+                <div className="w-full max-w-[420px] mx-auto">
                   <GlobeCdn
                     markers={flightMarkers}
                     arcs={flightArcs}
@@ -408,46 +411,46 @@ export default function Home() {
                 </div>
 
                 {/* Route Waypoint Stats Below Globe */}
-                <div className="w-full mt-4 pt-4 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <div className="w-full mt-3.5 pt-3.5 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-200/80">
                     <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Total Distance</span>
-                    <span className="text-slate-900 font-bold font-mono text-sm">{totalDistanceNmi.toLocaleString()} nmi</span>
+                    <span className="text-slate-900 font-bold font-mono text-xs sm:text-sm">{totalDistanceNmi.toLocaleString()} nmi</span>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-200/80">
                     <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Illustrative flight time</span>
-                    <span className="text-slate-900 font-bold font-mono text-sm">{hoursStr}</span>
+                    <span className="text-slate-900 font-bold font-mono text-xs sm:text-sm">{hoursStr}</span>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-200/80">
                     <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Flight Route</span>
-                    <span className="text-sky-700 font-bold font-mono text-xs truncate block">
-                      {layoverCount === 0 ? "Direct Non-Stop" : `${layoverCount} Layover Leg${layoverCount > 1 ? "s" : ""}`}
+                    <span className="text-sky-700 font-bold font-mono text-[11px] truncate block">
+                      {layoverCount === 0 ? "Non-Stop" : `${layoverCount} Stop${layoverCount > 1 ? "s" : ""}`}
                     </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Question Boxes (Flight Route & Weather) */}
-            <div className="lg:col-span-6 flex justify-center">
-              <Suspense fallback={<p className="rounded-2xl bg-white/95 p-6 text-sky-900">Loading your flight controls…</p>}>
-              <FlightInputs
-                onResolved={handleResolved}
-                onResult={setAnalysisResult}
-                originAirport={originAirport}
-                onSelectOrigin={setOriginAirport}
-                destinationAirport={destinationAirport}
-                onSelectDestination={setDestinationAirport}
-                layoverCount={layoverCount}
-                onChangeLayoverCount={setLayoverCount}
-                layoverAirport1={layoverAirport1}
-                onSelectLayover1={setLayoverAirport1}
-                layoverAirport2={layoverAirport2}
-                onSelectLayover2={setLayoverAirport2}
-              />
-              </Suspense>
+            {/* RIGHT COLUMN: Reorganized Flight Data Cards */}
+            <div className="lg:col-span-7 w-full">
+              {analysisResult ? (
+                <ConciergeResults result={analysisResult} />
+              ) : (
+                <div className="rounded-2xl border border-sky-100 bg-white/95 backdrop-blur-md p-8 shadow-xl text-center space-y-4">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-sky-50 border border-sky-200 text-sky-600">
+                    <svg className="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-bold text-slate-900">Awaiting Flight Selection</h3>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto">
+                      Search for any route, city, or airport code in the command search above to inspect historical delays, Snowflake telemetry, weather, and airline support.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          {analysisResult && <div className="mt-8"><ConciergeResults result={analysisResult} /></div>}
         </div>
       </section>
     </motion.div>
