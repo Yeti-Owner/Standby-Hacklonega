@@ -1,9 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import Map, { Marker, type MapProps } from "@vis.gl/react-maplibre";
+import { useEffect, useState } from "react";
+import Map, { Layer, Marker, Source, type LayerProps, type MapProps } from "@vis.gl/react-maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { AIRPORT_MAP_STYLE, airportTerminalCoordinates } from "@/lib/airport-map";
+import { loadAirportGates, type AirportGates } from "@/lib/airport-gates";
+
+const gateDots: LayerProps = {
+  id: "airport-gate-doors",
+  type: "circle",
+  paint: { "circle-radius": 3, "circle-color": "#666666", "circle-stroke-width": 1, "circle-stroke-color": "#ffffff" },
+};
+const gateLabels: LayerProps = {
+  id: "airport-gate-labels",
+  type: "symbol",
+  layout: {
+    "text-field": ["get", "ref"],
+    "text-font": ["Noto Sans Regular"],
+    "text-size": 12,
+    "text-anchor": "bottom",
+    "text-offset": [0, -0.7],
+    "text-allow-overlap": true,
+  },
+  paint: { "text-color": "#333333", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
+};
 
 export type AirportGateMapProps = {
   airportCode: string;
@@ -16,17 +36,16 @@ export type AirportGateMapProps = {
 
 export default function AirportGateMap({ airportCode, gate, mapStyle = AIRPORT_MAP_STYLE, onLoad }: AirportGateMapProps) {
   const code = airportCode.trim().toUpperCase();
-  const label = gate.trim();
+  const label = gate.trim().toUpperCase();
   const coordinates = airportTerminalCoordinates(code);
 
-  if (!label) return <p className="text-sm text-slate-600">Gate not assigned yet.</p>;
-  if (!coordinates) return <p className="text-sm text-slate-600">Terminal map unavailable for {code || "this airport"}. Gate {label}.</p>;
+  if (!coordinates) return <p className="text-sm text-slate-600">Terminal map unavailable for {code || "this airport"}.{label && ` Gate ${label}.`}</p>;
 
-  // Remount on airport changes so camera and loading state cannot retain an old airport.
-  return <TerminalMap key={code} {...{ code, label, coordinates, mapStyle, onLoad }} />;
+  // Reset immediately on flight changes; never show a previous flight's gate.
+  return <TerminalMap key={`${code}_${label}`} {...{ code, label, coordinates, mapStyle, onLoad }} />;
 }
 
-function TerminalMap({ code, label, coordinates: [longitude, latitude], mapStyle, onLoad }: {
+function TerminalMap({ code, label, coordinates, mapStyle, onLoad }: {
   code: string;
   label: string;
   coordinates: readonly [number, number];
@@ -34,13 +53,42 @@ function TerminalMap({ code, label, coordinates: [longitude, latitude], mapStyle
   onLoad: MapProps["onLoad"];
 }) {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [gates, setGates] = useState<AirportGates | null>(null);
+  const [lookupFailed, setLookupFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void loadAirportGates(code, label, coordinates).then(data => {
+      if (active) setGates(data);
+    }).catch(() => { if (active) setLookupFailed(true); });
+    // Let the shared request finish and cache even if this component unmounts.
+    return () => { active = false; };
+  }, [code, label, coordinates]);
+
+  const matches = gates?.features.filter(feature => feature.properties.ref.toUpperCase() === label) ?? [];
+  const selected = matches.length === 1 ? matches[0] : undefined;
+
+  if (label && !selected) {
+    const message = lookupFailed
+      ? "Gate lookup unavailable. Check your connection and try again later."
+      : !gates
+        ? "Loading terminal gates…"
+        : matches.length > 1
+          ? `Multiple locations are mapped for gate ${label}; an exact location cannot be confirmed.`
+          : `Gate ${label} is not mapped in OpenStreetMap for ${code}.`;
+    return <div className="flex h-80 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-600" style={{ filter: "grayscale(100%) contrast(115%)" }} role="status">
+      <p>{message}{(lookupFailed || gates) && " Confirm the location on airport signs or with the airline."}</p>
+    </div>;
+  }
+
+  const [longitude, latitude] = selected?.geometry.coordinates ?? coordinates;
 
   return <figure className="space-y-2">
     <div
       className="relative h-80 overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
-      style={{ filter: "grayscale(100%) contrast(105%)" }}
+      style={{ filter: "grayscale(100%) contrast(115%)" }}
       role="group"
-      aria-label={`${code} terminal overview, gate ${label}. Marker is at the airport center, not the exact gate.`}
+      aria-label={selected ? `${code} terminal map centered on mapped gate ${label}, with neighboring gate labels.` : `${code} airport terminal overview. No gate selected.`}
       aria-busy={status === "loading"}
     >
       <Map
@@ -48,7 +96,7 @@ function TerminalMap({ code, label, coordinates: [longitude, latitude], mapStyle
         workerUrl={new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).toString()}
         longitude={longitude}
         latitude={latitude}
-        zoom={16}
+        zoom={selected ? 18 : 16}
         bearing={0}
         pitch={0}
         interactive={false}
@@ -59,17 +107,21 @@ function TerminalMap({ code, label, coordinates: [longitude, latitude], mapStyle
         onLoad={event => { setStatus("ready"); onLoad?.(event); }}
         onError={() => setStatus("error")}
       >
-        <Marker longitude={longitude} latitude={latitude} anchor="bottom">
+        {gates && <Source id="airport-gates" type="geojson" data={gates} attribution="Gate locations © OpenStreetMap contributors">
+          <Layer {...gateDots} />
+          <Layer {...gateLabels} />
+        </Source>}
+        {selected && <Marker longitude={longitude} latitude={latitude} anchor="bottom">
           <div className="flex flex-col items-center" aria-label={`Gate ${label}`}>
             <span className="max-w-48 break-words rounded-md border border-white bg-slate-900 px-3 py-1.5 text-center font-sans text-sm font-bold text-white shadow-md">{label}</span>
             <span className="h-3 w-3 -translate-y-1.5 rotate-45 bg-slate-900" />
           </div>
-        </Marker>
+        </Marker>}
       </Map>
       {status !== "ready" && <p role="status" className="pointer-events-none absolute left-3 right-3 top-3 rounded-md bg-white/95 p-2 text-sm text-slate-700">
-        {status === "loading" ? "Loading terminal map…" : `Map unavailable. ${code} · Gate ${label}. Check the airport signs for directions.`}
+        {status === "loading" ? "Loading terminal map…" : `Map unavailable. ${code}${label ? ` · Gate ${label}` : ""}. Check the airport signs for directions.`}
       </p>}
     </div>
-    <figcaption className="text-xs text-slate-600">Airport overview · Gate {label}. Pin marks the airport center, not the exact gate. Labels depend on map coverage; confirm your gate with the airline.</figcaption>
+    <figcaption className="text-xs text-slate-600">{selected ? `${code} · Gate ${label} · OpenStreetMap gate location.` : `${code} terminal overview · No gate selected; enter a gate above to zoom in.`} {!label && (!gates ? (lookupFailed ? "Gate labels are currently unavailable. " : "Loading gate labels… ") : "")}Terminal outlines and indoor detail depend on map coverage. Confirm your gate with the airline.</figcaption>
   </figure>;
 }

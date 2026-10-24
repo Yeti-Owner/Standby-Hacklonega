@@ -21,6 +21,26 @@ function clock(value?: string | null, airport?: AirportInfo) {
   return date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: airport?.tz || "UTC", timeZoneName: "short" });
 }
 
+function AirportMapCard({ airportCode, gate, side }: { airportCode: string; gate?: string | null; side: "departure" | "arrival" }) {
+  const [activeGate, setActiveGate] = useState(gate?.trim().toUpperCase() || "");
+  const [draftGate, setDraftGate] = useState(activeGate);
+  return <article>
+    <h4 className="mb-2 font-bold text-slate-700">{side === "departure" ? "Departure" : "Arrival"} · {airportCode}{activeGate && ` · Gate ${activeGate}`}</h4>
+    {!gate?.trim() && <p className="mb-3 text-sm text-slate-600">The flight search did not provide a gate. Enter the gate from your boarding pass or airline app to locate it on the map.</p>}
+    <form className="mb-3 flex flex-wrap items-end gap-2" onSubmit={event => {
+      event.preventDefault();
+      setActiveGate(draftGate.trim().toUpperCase());
+    }}>
+      <label className="flex flex-col gap-1 text-sm text-slate-700">
+        Gate at {airportCode}
+        <input value={draftGate} onChange={event => setDraftGate(event.target.value)} maxLength={20} placeholder="e.g. B22" autoCapitalize="characters" className="w-36 rounded-lg border border-slate-300 bg-white px-3 py-2" />
+      </label>
+      <button type="submit" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">{draftGate.trim() ? "Show gate" : "Show airport"}</button>
+    </form>
+    <AirportGateMap airportCode={airportCode} gate={activeGate} />
+  </article>;
+}
+
 export default function ConciergeResults({ result }: { result: FlightResult }) {
   const [unit, setUnit] = useState<"F" | "C">("F");
   const flight = result.travel_context?.flight || result.selected_flight;
@@ -39,15 +59,12 @@ export default function ConciergeResults({ result }: { result: FlightResult }) {
       <p className="text-sm text-slate-600">{result.aircraft_or_status}</p>
       <p className="mt-2 text-xs text-slate-600">{result.schedule_source === "unverified_model_knowledge" ? "UNVERIFIED model suggestion — confirm with the airline" : `Schedule source: ${result.schedule_source || "Not queried"}`}</p>
     </div>
-    {flight && (flight.departure_gate?.trim() || flight.arrival_gate?.trim()) && <div className={box}>
+    {flight && <div className={box}>
       <h3 className="mb-3 text-xl font-bold text-slate-900">Airport terminal map</h3>
       <div className="space-y-5">{(["departure", "arrival"] as const).map(side => {
         const gate = (side === "departure" ? flight.departure_gate : flight.arrival_gate)?.trim();
         const code = side === "departure" ? flight.origin_iata : flight.dest_iata;
-        return gate ? <article key={side}>
-          <h4 className="mb-2 font-bold text-slate-700">{side === "departure" ? "Departure" : "Arrival"} · {code} · Gate {gate}</h4>
-          <AirportGateMap airportCode={code} gate={gate} />
-        </article> : null;
+        return <AirportMapCard key={`${side}_${code}_${flight.flight_number}_${flight.scheduled_departure}_${gate || ""}`} airportCode={code} gate={gate} side={side} />;
       })}</div>
     </div>}
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

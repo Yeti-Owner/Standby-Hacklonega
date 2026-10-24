@@ -13,7 +13,7 @@ export const AIRPORT_TERMINAL_COORDINATES: Readonly<Record<string, readonly [num
   LHR: [-0.4496, 51.4707],
 };
 
-export const AIRPORT_MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
+export const AIRPORT_MAP_STYLE = "https://tiles.openfreemap.org/styles/bright";
 
 export function airportTerminalCoordinates(airportCode: string) {
   const code = airportCode.trim().toUpperCase();

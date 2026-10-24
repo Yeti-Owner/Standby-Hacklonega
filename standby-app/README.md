@@ -17,21 +17,37 @@ actual results or explicitly labeled planning illustrations.
 ## Airport terminal map
 
 `src/components/AirportGateMap.tsx` takes `airportCode` and `gate` and displays
-a non-interactive MapLibre WebGL vector map using OpenFreeMap Positron. The camera
-stays at zoom 16; the canvas preserves its drawing buffer. The wrapper applies
-grayscale and contrast. No map keys, geocoding, or Overpass calls are required;
-internet access is required for the style, vector tiles, fonts, and sprites.
+a non-interactive MapLibre WebGL vector map using OpenFreeMap Bright. The camera
+stays at zoom 18, centered on the gate's mapped coordinates, with no tilt. The
+canvas preserves its drawing buffer; the wrapper applies grayscale and 115%
+contrast. Gate dots and labels use a GeoJSON source and canvas-rendered layers.
 
 The static terminal centers in `src/lib/airport-map.ts` cover ATL, LAX, JFK, ORD,
-DFW, DEN, SFO, SEA, HND, and LHR. The gate pin intentionally marks that center,
-**not the gate's actual location**. Terminal/building/label coverage depends on
-the basemap; this version does not provide indoor routing or verified shops.
-Unsupported airports and loading failures show a text fallback.
+DFW, DEN, SFO, SEA, HND, and LHR. A single Overpass request to
+`https://overpass.private.coffee/api/interpreter` loads all gate nodes within 4 km
+of the airport center. Successful complete responses (including empty results)
+are cached without expiry in localStorage as `airport_gates_CODE` and
+`airport_gate_CODE_GATE`. Different gates reuse the airport response. Concurrent
+mounts and hot reloads share the request. Blocked storage falls back to memory;
+errors/partial responses are not cached and there are no automatic retries.
+Clear these keys in browser storage to refresh outdated gate data.
 
-Flight results show maps when `departure_gate` or `arrival_gate` is supplied.
-The existing Aviationstack adapter preserves those fields; providers without
-gate data do not show a map. The Debug demo includes synthetic JFK/LHR gates
-for testing without flight-provider calls (map tiles still load from OpenFreeMap).
+Unsupported airports, missing/ambiguous gates, and loading failures show a text
+fallback; no airport-center pin is substituted. Terminal footprints come from
+the vector basemap. Interior rooms/corridors depend on OSM coverage: this is not
+a guaranteed indoor floor plan and does not provide routing or verified shops.
+Internet access is required for uncached gate lookups and basemap assets.
+
+Flight results always show the airport map section for a resolved route.
+The existing Aviationstack adapter preserves `departure_gate` / `arrival_gate`.
+Without a gate, each supported airport shows a zoom-16 terminal overview with
+gate labels and no active pin. Enter a gate from the airline app or boarding
+pass and choose **Show gate** to center its mapped location at zoom 18. This
+manual selection does not claim the flight is assigned to that gate. Clear
+the field and choose **Show airport** to return to the overview.
+The Debug demo includes synthetic JFK/LHR gates
+for testing without flight-provider calls. Synthetic gates may be unmapped;
+gate data loads from Overpass once per airport, and map assets use OpenFreeMap.
 
 For future rendering, pass a MapLibre style JSON/URL through optional `mapStyle`,
 or use optional `onLoad` and `event.target` to add native custom WebGL/GLSL layers
