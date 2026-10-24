@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Search, X, ChevronRight, Mic, Square, Upload, LoaderCircle } from "lucide-react";
 import { Airport, AIRPORTS } from "@/lib/airports";
-import DebugDemoButton from "@/components/debug-demo-button";
+import DemoButton from "@/components/demo-button";
 import { airportTranscriptSuggestion, checked, toWav, type AnalysisEvent, type FlightResult, type Status } from "@/lib/concierge";
 
 interface FlightSearchBarProps {
@@ -476,7 +476,7 @@ export default function FlightSearchBar({
       {/* Missing settings alert */}
       {status?.missing_settings && status.missing_settings.length > 0 && (
         <p className="mt-2 rounded-xl bg-amber-50 p-2.5 text-xs text-amber-900 border border-amber-200">
-          Live setup incomplete: {status.missing_settings.join(", ")}. The debug demo uses no credentials.
+          Live setup incomplete: {status.missing_settings.join(", ")}. You can try the sample flight without credentials.
         </p>
       )}
 
@@ -546,16 +546,16 @@ export default function FlightSearchBar({
         </p>
       )}
 
-      {/* Debug Demo Fixture Button */}
+      {/* Credential-free sample flight */}
       {status?.demo_available && (
         <div className="mt-2 flex justify-center">
-          <DebugDemoButton
+          <DemoButton
             disabled={busy || recording}
             onResult={(event) => {
               setConfirmed(event.transcript);
               setError("");
               apply(event);
-              setMessage("Debug demo loaded (JFK ➔ LHR). No API calls made.");
+              setMessage("Sample flight loaded (JFK ➔ LHR). Flight and delay data are synthetic.");
             }}
           />
         </div>

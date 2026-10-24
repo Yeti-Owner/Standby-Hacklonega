@@ -7,3 +7,4 @@
 - [Open-Meteo](https://open-meteo.com/), CC BY 4.0; [NOAA Aviation Weather Center](https://aviationweather.gov/); [FAA NAS](https://nasstatus.faa.gov/).
 - [Security Wait Times](https://securitywaittimes.com/data/), CC BY 4.0.
 - [airportsdata](https://github.com/mborsetti/airportsdata), MIT.
+- Instrument Serif fonts, SIL Open Font License; the license is included in `standby-app/public/fonts/OFL.txt`.

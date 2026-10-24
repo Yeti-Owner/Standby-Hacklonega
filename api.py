@@ -1,4 +1,4 @@
-"""Local JSON/streaming adapter around Callum's unchanged concierge engine."""
+"""Local JSON and streaming API for the flight concierge."""
 from contextlib import asynccontextmanager
 import datetime as dt
 import json
